@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Auto Backup has a 25 MB per-app quota. Catalog photos are downscaled to ~400 px
+  (~30 KB each) so a large catalog still fits.
+
+  Listing explicit <include> elements means everything not listed is already left
+  out, so files/adhoc (one-off AI plate photos, which would exhaust the quota) and
+  files/share (FileProvider scratch files) need no <exclude> rule.
+-->
+<full-backup-content>
+    <include domain="database" path="." />
+    <include domain="sharedpref" path="." />
+    <include domain="file" path="photos/" />
+    <include domain="file" path="datastore/" />
+</full-backup-content>

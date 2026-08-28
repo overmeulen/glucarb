@@ -8,3 +8,12 @@ build/
 .externalNativeBuild
 .cxx
 local.properties
+
+# Signing material. The keystore itself lives outside the repo; this is the second line
+# of defence so a stray copy can never be committed.
+keystore.properties
+*.jks
+*.keystore
+
+# Built APKs staged for sideloading.
+dist/

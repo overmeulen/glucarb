@@ -41,12 +41,47 @@ An Android app for counting grams of carbohydrate per meal, built around one goa
 Requires JDK 17+ and the Android SDK (compileSdk 35, minSdk 26).
 
 ```
-./gradlew testDebugUnitTest   # 25 unit tests
+./gradlew testDebugUnitTest   # 42 unit tests
 ./gradlew assembleDebug       # app/build/outputs/apk/debug/app-debug.apk
+./gradlew assembleRelease     # app/build/outputs/apk/release/app-release.apk
 ./gradlew lintDebug
 ```
 
 `local.properties` must point at your SDK, e.g. `sdk.dir=D\:\\android-sdk`.
+
+## Installing on a phone
+
+The release build is signed with a private key that is deliberately **not** in this
+repo. Create `keystore.properties` at the repo root:
+
+```properties
+storeFile=D:/somewhere-outside-the-repo/carbtrack-release.jks
+storePassword=...
+keyAlias=carbtrack
+keyPassword=...
+```
+
+Use forward slashes — a `.properties` file treats `\` as an escape character and will
+silently mangle a Windows path. Generate the keystore with:
+
+```
+keytool -genkeypair -v -keystore carbtrack-release.jks -alias carbtrack \
+        -keyalg RSA -keysize 4096 -validity 10950
+```
+
+Without `keystore.properties` the release build still assembles, just unsigned, so a
+fresh clone is never broken by the missing secret.
+
+**Back the keystore up.** Android identifies an app by its signature, so losing the key
+means you can never again install an update over an existing CarbTrack — you would have
+to uninstall first, destroying the local database.
+
+Then either `adb install -r dist/CarbTrack-1.0.apk` over USB, or copy the APK to the
+phone and open it from a file manager. Sideloading needs "Install unknown apps" granted
+to whichever app opens the file.
+
+Bump `versionCode` in `app/build.gradle.kts` for every build you intend to install over
+the previous one.
 
 ## Layout
 

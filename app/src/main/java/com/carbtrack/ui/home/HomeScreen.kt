@@ -1,4 +1,4 @@
-package com.carbtrack.ui.home
+﻿package com.carbtrack.ui.home
 
 import android.content.Context
 import android.content.Intent
@@ -7,20 +7,15 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.grid.GridCells
@@ -34,12 +29,13 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.GridView
 import androidx.compose.material.icons.filled.History
-import androidx.compose.material.icons.filled.PhotoCamera
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.outlined.CameraAlt
 import androidx.compose.material.icons.automirrored.filled.ViewList
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -48,7 +44,6 @@ import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarResult
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
@@ -65,7 +60,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
@@ -121,7 +115,7 @@ fun HomeScreen(
             when (event) {
                 is HomeEvent.EntryAdded -> {
                     val result = snackbar.showSnackbar(
-                        message = "Added ${event.label} · ${CarbMath.formatCarbs(event.carbs)} g",
+                        message = "Added ${event.label} Â· ${CarbMath.formatCarbs(event.carbs)} g",
                         actionLabel = "Undo",
                         duration = SnackbarDuration.Short,
                     )
@@ -147,7 +141,7 @@ fun HomeScreen(
                         targetPackage = settings.aiTargetPackage,
                     )
                     if (!sent) {
-                        snackbar.showSnackbar("No app could receive the photo — check Settings")
+                        snackbar.showSnackbar("No app could receive the photo â€” check Settings")
                     }
                 }
             }
@@ -157,19 +151,34 @@ fun HomeScreen(
     Scaffold(
         snackbarHost = { SnackbarHost(snackbar) },
         floatingActionButton = {
-            ActionPill(
-                onEstimatePlate = {
-                    val (file, uri) = viewModel.newCaptureTarget()
-                    captureUri = uri.toString()
-                    runCatching { cameraLauncher.launch(uri) }.onFailure {
-                        file.delete()
-                        galleryLauncher.launch(
-                            PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
-                        )
-                    }
-                },
-                onCreateItem = { onCreateItem("") },
-            )
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
+                // Both are full-size FABs so the pair can never drift out of step; only
+                // the container colour marks the camera as the secondary action. The
+                // camera icon is the *outlined* variant on purpose: the filled one is a
+                // solid mass next to the hairline "+", and the weights clash.
+                FloatingActionButton(
+                    onClick = {
+                        val (file, uri) = viewModel.newCaptureTarget()
+                        captureUri = uri.toString()
+                        runCatching { cameraLauncher.launch(uri) }.onFailure {
+                            file.delete()
+                            galleryLauncher.launch(
+                                PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
+                            )
+                        }
+                    },
+                    containerColor = MaterialTheme.colorScheme.surfaceVariant,
+                    contentColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                ) {
+                    Icon(Icons.Outlined.CameraAlt, contentDescription = "Estimate a plate with AI")
+                }
+                FloatingActionButton(onClick = { onCreateItem("") }) {
+                    Icon(Icons.Default.Add, contentDescription = "New catalog item")
+                }
+            }
         },
     ) { padding ->
         Column(Modifier.fillMaxSize().padding(padding)) {
@@ -255,72 +264,6 @@ fun HomeScreen(
     }
 }
 
-/**
- * The two "add" actions sit in one pill rather than as two separate FABs.
- *
- * They are not equals — `+` creates a catalog item and is the primary, the camera is
- * the rarer AI escape hatch — but they *are* the same kind of action, so they share a
- * container. Making the halves siblings in one Row is what keeps them the same size:
- * two independent FABs drift apart the moment one of them changes.
- */
-@Composable
-private fun ActionPill(
-    onEstimatePlate: () -> Unit,
-    onCreateItem: () -> Unit,
-) {
-    val shape = RoundedCornerShape(18.dp)
-    Surface(
-        shape = shape,
-        color = MaterialTheme.colorScheme.surfaceVariant,
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
-        shadowElevation = 6.dp,
-        modifier = Modifier.height(56.dp),
-    ) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            PillHalf(
-                onClick = onEstimatePlate,
-                icon = Icons.Default.PhotoCamera,
-                label = "Estimate a plate with AI",
-                background = Color.Transparent,
-                tint = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-            Box(
-                Modifier
-                    .width(1.dp)
-                    .height(26.dp)
-                    .background(MaterialTheme.colorScheme.outline)
-            )
-            PillHalf(
-                onClick = onCreateItem,
-                icon = Icons.Default.Add,
-                label = "New catalog item",
-                background = MaterialTheme.colorScheme.primary,
-                tint = MaterialTheme.colorScheme.onPrimary,
-            )
-        }
-    }
-}
-
-@Composable
-private fun PillHalf(
-    onClick: () -> Unit,
-    icon: androidx.compose.ui.graphics.vector.ImageVector,
-    label: String,
-    background: Color,
-    tint: Color,
-) {
-    Box(
-        contentAlignment = Alignment.Center,
-        modifier = Modifier
-            .fillMaxHeight()
-            .width(62.dp)
-            .background(background)
-            .clickable(onClick = onClick, role = Role.Button, onClickLabel = label),
-    ) {
-        Icon(icon, contentDescription = label, tint = tint)
-    }
-}
-
 @Composable
 private fun MealHeader(
     carbs: Double,
@@ -336,7 +279,7 @@ private fun MealHeader(
     Column(Modifier.padding(start = 16.dp, end = 8.dp, top = 12.dp, bottom = 10.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text(
-                if (time == null) "CURRENT MEAL" else "CURRENT MEAL · $time",
+                if (time == null) "CURRENT MEAL" else "CURRENT MEAL Â· $time",
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.weight(1f),
@@ -431,7 +374,7 @@ private fun SearchBar(
             value = query,
             onValueChange = onQuery,
             singleLine = true,
-            placeholder = { Text("Search…") },
+            placeholder = { Text("Searchâ€¦") },
             leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
             keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
             shape = RoundedCornerShape(12.dp),
@@ -525,7 +468,7 @@ private fun shareToAi(
             return true
         }
     }
-    val chooser = Intent.createChooser(base, "Estimate carbs with…")
+    val chooser = Intent.createChooser(base, "Estimate carbs withâ€¦")
     if (chooser.resolveActivity(context.packageManager) == null) return false
     context.startActivity(chooser)
     return true

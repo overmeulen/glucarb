@@ -7,16 +7,20 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.grid.GridCells
@@ -36,16 +40,15 @@ import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.automirrored.filled.ViewList
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SmallFloatingActionButton
 import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarResult
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
@@ -62,6 +65,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
@@ -153,29 +157,19 @@ fun HomeScreen(
     Scaffold(
         snackbarHost = { SnackbarHost(snackbar) },
         floatingActionButton = {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-            ) {
-                SmallFloatingActionButton(
-                    onClick = {
-                        val (file, uri) = viewModel.newCaptureTarget()
-                        captureUri = uri.toString()
-                        runCatching { cameraLauncher.launch(uri) }.onFailure {
-                            file.delete()
-                            galleryLauncher.launch(
-                                PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
-                            )
-                        }
-                    },
-                    containerColor = MaterialTheme.colorScheme.surfaceVariant,
-                ) {
-                    Icon(Icons.Default.PhotoCamera, contentDescription = "Estimate a plate with AI")
-                }
-                FloatingActionButton(onClick = { onCreateItem("") }) {
-                    Icon(Icons.Default.Add, contentDescription = "New catalog item")
-                }
-            }
+            ActionPill(
+                onEstimatePlate = {
+                    val (file, uri) = viewModel.newCaptureTarget()
+                    captureUri = uri.toString()
+                    runCatching { cameraLauncher.launch(uri) }.onFailure {
+                        file.delete()
+                        galleryLauncher.launch(
+                            PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
+                        )
+                    }
+                },
+                onCreateItem = { onCreateItem("") },
+            )
         },
     ) { padding ->
         Column(Modifier.fillMaxSize().padding(padding)) {
@@ -258,6 +252,72 @@ fun HomeScreen(
             onCancel = { viewModel.cancelPendingAi(s.entryId) },
             onDismiss = viewModel::dismissAdHocSheet,
         )
+    }
+}
+
+/**
+ * The two "add" actions sit in one pill rather than as two separate FABs.
+ *
+ * They are not equals — `+` creates a catalog item and is the primary, the camera is
+ * the rarer AI escape hatch — but they *are* the same kind of action, so they share a
+ * container. Making the halves siblings in one Row is what keeps them the same size:
+ * two independent FABs drift apart the moment one of them changes.
+ */
+@Composable
+private fun ActionPill(
+    onEstimatePlate: () -> Unit,
+    onCreateItem: () -> Unit,
+) {
+    val shape = RoundedCornerShape(18.dp)
+    Surface(
+        shape = shape,
+        color = MaterialTheme.colorScheme.surfaceVariant,
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
+        shadowElevation = 6.dp,
+        modifier = Modifier.height(56.dp),
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            PillHalf(
+                onClick = onEstimatePlate,
+                icon = Icons.Default.PhotoCamera,
+                label = "Estimate a plate with AI",
+                background = Color.Transparent,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            Box(
+                Modifier
+                    .width(1.dp)
+                    .height(26.dp)
+                    .background(MaterialTheme.colorScheme.outline)
+            )
+            PillHalf(
+                onClick = onCreateItem,
+                icon = Icons.Default.Add,
+                label = "New catalog item",
+                background = MaterialTheme.colorScheme.primary,
+                tint = MaterialTheme.colorScheme.onPrimary,
+            )
+        }
+    }
+}
+
+@Composable
+private fun PillHalf(
+    onClick: () -> Unit,
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    label: String,
+    background: Color,
+    tint: Color,
+) {
+    Box(
+        contentAlignment = Alignment.Center,
+        modifier = Modifier
+            .fillMaxHeight()
+            .width(62.dp)
+            .background(background)
+            .clickable(onClick = onClick, role = Role.Button, onClickLabel = label),
+    ) {
+        Icon(icon, contentDescription = label, tint = tint)
     }
 }
 

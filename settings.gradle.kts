@@ -20,5 +20,5 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "CarbTrack"
+rootProject.name = "Glucarb"
 include(":app")

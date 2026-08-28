@@ -1,4 +1,4 @@
-# CarbTrack
+# Glucarb
 
 An Android app for counting grams of carbohydrate per meal, built around one goal:
 **three taps to log** — tap the item, tap a quantity chip, done.
@@ -55,9 +55,9 @@ The release build is signed with a private key that is deliberately **not** in t
 repo. Create `keystore.properties` at the repo root:
 
 ```properties
-storeFile=D:/somewhere-outside-the-repo/carbtrack-release.jks
+storeFile=D:/somewhere-outside-the-repo/Glucarb-release.jks
 storePassword=...
-keyAlias=carbtrack
+keyAlias=Glucarb
 keyPassword=...
 ```
 
@@ -65,7 +65,7 @@ Use forward slashes — a `.properties` file treats `\` as an escape character a
 silently mangle a Windows path. Generate the keystore with:
 
 ```
-keytool -genkeypair -v -keystore carbtrack-release.jks -alias carbtrack \
+keytool -genkeypair -v -keystore Glucarb-release.jks -alias Glucarb \
         -keyalg RSA -keysize 4096 -validity 10950
 ```
 
@@ -73,10 +73,10 @@ Without `keystore.properties` the release build still assembles, just unsigned, 
 fresh clone is never broken by the missing secret.
 
 **Back the keystore up.** Android identifies an app by its signature, so losing the key
-means you can never again install an update over an existing CarbTrack — you would have
+means you can never again install an update over an existing Glucarb — you would have
 to uninstall first, destroying the local database.
 
-Then either `adb install -r dist/CarbTrack-1.0.apk` over USB, or copy the APK to the
+Then either `adb install -r dist/Glucarb-1.0.apk` over USB, or copy the APK to the
 phone and open it from a file manager. Sideloading needs "Install unknown apps" granted
 to whichever app opens the file.
 

@@ -116,8 +116,8 @@ gallery). Two disclosures are nonetheless required:
 
 ### Name
 
-⚠️ `CarbTrack` is **already published on Play** as `com.kouidev.carbtrack`, a diabetes
-carb/glucose tracker, and a second unrelated `CarbTrack` ships on the iOS App Store.
+⚠️ `Glucarb` is **already published on Play** as `com.kouidev.Glucarb`, a diabetes
+carb/glucose tracker, and a second unrelated `Glucarb` ships on the iOS App Store.
 Shipping under this name risks a misleading-app-name takedown. See branch
 `rename/glucarb` for a complete, tested rename. `applicationId` is immutable after the
 first published release, so this must be settled before the first upload.

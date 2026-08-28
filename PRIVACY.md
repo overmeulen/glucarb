@@ -1,14 +1,14 @@
 # Privacy Policy
 
-**App:** CarbTrack
+**App:** Glucarb
 **Last updated:** 28 August 2026
 
-CarbTrack is a carbohydrate counter. It records the food you log and the carbohydrate
+Glucarb is a carbohydrate counter. It records the food you log and the carbohydrate
 totals it calculates. This document describes exactly what happens to that information.
 
 ## The short version
 
-CarbTrack has **no internet permission**. It cannot send your data anywhere, because
+Glucarb has **no internet permission**. It cannot send your data anywhere, because
 the operating system will not let it open a network connection. There is no account, no
 sign-up, no analytics, no advertising, no crash reporting and no tracking of any kind.
 Nothing you log is transmitted to the developer, and the developer cannot see it.
@@ -32,14 +32,14 @@ collected at any point.
 ## Health data
 
 Carbohydrate intake is health information, so it is treated as sensitive. It never
-leaves the device except through the two mechanisms below. CarbTrack does not read from
+leaves the device except through the two mechanisms below. Glucarb does not read from
 or write to Google Fit, Health Connect, or any glucose meter or CGM.
 
 ## The two ways data can leave your device
 
 ### 1. Android Auto Backup — on by default, controlled by you
 
-CarbTrack participates in Android's standard backup system. Your catalog, meal history,
+Glucarb participates in Android's standard backup system. Your catalog, meal history,
 photos and settings are copied to **your own Google account** so that a new or reset
 phone can restore them. This is performed by Android, not by the app.
 
@@ -53,18 +53,18 @@ One-off photos taken for AI analysis are deliberately excluded from cloud backup
 
 ### 2. Sending a photo to another app for AI analysis — only when you ask
 
-CarbTrack can hand a meal photo to another app on your phone, together with a text
+Glucarb can hand a meal photo to another app on your phone, together with a text
 prompt, so that app can estimate the carbohydrates. This only ever happens when you
 explicitly tap the button and then choose a destination app.
 
 **Once the photo reaches that app, this policy no longer applies to it.** The receiving
 app is a separate product with its own privacy policy and its own servers, and it will
 very likely upload the photo. Choose the destination deliberately, and read its policy.
-CarbTrack receives nothing back automatically — you type in the result yourself.
+Glucarb receives nothing back automatically — you type in the result yourself.
 
 ## Camera
 
-CarbTrack does not request the camera permission. When you add a photo, Android's own
+Glucarb does not request the camera permission. When you add a photo, Android's own
 camera or gallery app handles it and returns a single image. The app never has
 independent access to your camera or photo library.
 
@@ -77,7 +77,7 @@ turning backup off before uninstalling.
 
 ## Children
 
-CarbTrack is not directed at children and collects nothing that could identify anyone.
+Glucarb is not directed at children and collects nothing that could identify anyone.
 
 ## Changes
 

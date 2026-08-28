@@ -68,6 +68,7 @@ class MealRepository(
                 foodItemId = item.id,
                 label = item.name,
                 photoPath = item.photoPath,
+                emoji = item.emoji,
                 quantity = resolved.quantity,
                 unit = item.unit,
                 enteredAsPortions = resolved.enteredAsPortions,

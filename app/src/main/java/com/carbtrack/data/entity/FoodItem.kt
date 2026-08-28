@@ -10,6 +10,8 @@ data class FoodItem(
     @PrimaryKey(autoGenerate = true) val id: Long = 0,
     val name: String,
     val photoPath: String? = null,
+    /** A glyph from [com.carbtrack.domain.FoodIcons], shown when there is no photo. */
+    val emoji: String? = null,
     val unit: MeasurementUnit = MeasurementUnit.G,
     /** Grams of carbohydrate per 100 g (or 100 ml) of this item. */
     val carbsPer100: Double,

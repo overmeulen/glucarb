@@ -39,6 +39,8 @@ data class MealEntry(
     /** Display name, denormalised so history survives item deletion. */
     val label: String,
     val photoPath: String? = null,
+    /** Snapshot of the item's icon, so history keeps the look it was logged with. */
+    val emoji: String? = null,
     /** Always normalised to g/ml, even when the user typed portions. */
     val quantity: Double,
     val unit: MeasurementUnit = MeasurementUnit.G,

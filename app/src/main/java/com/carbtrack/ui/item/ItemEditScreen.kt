@@ -13,32 +13,46 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.GridItemSpan
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.PhotoCamera
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
@@ -46,9 +60,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import coil.compose.AsyncImage
 import com.carbtrack.data.MeasurementUnit
-import java.io.File
+import com.carbtrack.domain.FoodIcon
+import com.carbtrack.domain.FoodIcons
+import com.carbtrack.ui.common.ItemAvatar
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -57,6 +72,7 @@ fun ItemEditScreen(
     viewModel: ItemEditViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
+    var browsingIcons by remember { mutableStateOf(false) }
 
     val galleryLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.PickVisualMedia()
@@ -88,22 +104,28 @@ fun ItemEditScreen(
                 .verticalScroll(rememberScrollState())
                 .padding(horizontal = 16.dp),
         ) {
-            PhotoPicker(
-                photoPath = state.photoPath,
-                onPick = {
-                    galleryLauncher.launch(
-                        PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
-                    )
-                },
-                onClear = viewModel::clearPhoto,
-            )
-
+            // The name comes first because the icon suggestions are derived from it: asking for
+            // a picture before knowing what the thing is would waste the user's first tap.
             OutlinedTextField(
                 value = state.name,
                 onValueChange = viewModel::setName,
                 label = { Text("Name") },
                 singleLine = true,
-                modifier = Modifier.fillMaxWidth().padding(top = 14.dp),
+                modifier = Modifier.fillMaxWidth().padding(top = 12.dp),
+            )
+
+            IdentityPicker(
+                state = state,
+                onSelectIcon = viewModel::setEmoji,
+                onBrowse = { browsingIcons = true },
+                onPickPhoto = {
+                    galleryLauncher.launch(
+                        PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
+                    )
+                },
+                onClear = {
+                    if (state.photoPath != null) viewModel.clearPhoto() else viewModel.setEmoji(null)
+                },
             )
 
             Text(
@@ -136,7 +158,7 @@ fun ItemEditScreen(
                 Column(Modifier.weight(1f)) {
                     Text("Sold in portions")
                     Text(
-                        "Slices, units, spoons…",
+                        "Slices, units, spoons...",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
@@ -193,41 +215,178 @@ fun ItemEditScreen(
             Box(Modifier.height(40.dp))
         }
     }
+
+    if (browsingIcons) {
+        IconBrowserSheet(
+            selected = state.emoji,
+            onSelect = {
+                viewModel.setEmoji(it)
+                browsingIcons = false
+            },
+            onDismiss = { browsingIcons = false },
+        )
+    }
+}
+
+/**
+ * Preview of what the tile will look like, plus the two ways to change it.
+ *
+ * Suggestions are the fast path and stay visible without being asked for; a photo and the full
+ * icon list are one tap away behind the buttons.
+ */
+@Composable
+private fun IdentityPicker(
+    state: ItemEditState,
+    onSelectIcon: (String) -> Unit,
+    onBrowse: () -> Unit,
+    onPickPhoto: () -> Unit,
+    onClear: () -> Unit,
+) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(14.dp),
+        modifier = Modifier.fillMaxWidth().padding(top = 16.dp),
+    ) {
+        ItemAvatar(
+            photoPath = state.photoPath,
+            emoji = state.emoji,
+            name = state.name.ifBlank { "?" },
+            modifier = Modifier.size(78.dp).clip(RoundedCornerShape(20.dp)),
+            fontSize = 30,
+        )
+        Column(
+            verticalArrangement = Arrangement.spacedBy(4.dp),
+            modifier = Modifier.weight(1f),
+        ) {
+            if (state.photoPath != null) {
+                Text(
+                    "Using a photo",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            } else if (state.suggestions.isEmpty()) {
+                Text(
+                    "Type a name to get icon suggestions.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            } else {
+                LazyRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    items(state.suggestions, key = { it.glyph }) { icon ->
+                        IconChip(
+                            icon = icon,
+                            selected = icon.glyph == state.emoji,
+                            onClick = { onSelectIcon(icon.glyph) },
+                        )
+                    }
+                }
+            }
+            Row(horizontalArrangement = Arrangement.spacedBy(2.dp)) {
+                CompactTextButton("All icons", onBrowse)
+                CompactTextButton("Photo", onPickPhoto)
+                if (state.photoPath != null || state.emoji != null) {
+                    CompactTextButton("Clear", onClear)
+                }
+            }
+        }
+    }
 }
 
 @Composable
-private fun PhotoPicker(photoPath: String?, onPick: () -> Unit, onClear: () -> Unit) {
-    val file = photoPath?.let { File(it) }?.takeIf { it.exists() }
+private fun CompactTextButton(label: String, onClick: () -> Unit) {
+    Text(
+        label,
+        fontSize = 13.sp,
+        color = MaterialTheme.colorScheme.primary,
+        modifier = Modifier
+            .clip(RoundedCornerShape(8.dp))
+            .clickable(onClick = onClick)
+            .padding(horizontal = 8.dp, vertical = 6.dp),
+    )
+}
+
+@Composable
+private fun IconChip(icon: FoodIcon, selected: Boolean, onClick: () -> Unit, size: Int = 42) {
     Box(
         contentAlignment = Alignment.Center,
         modifier = Modifier
-            .fillMaxWidth()
-            .height(140.dp)
-            .padding(top = 12.dp)
-            .clip(RoundedCornerShape(16.dp))
-            .background(MaterialTheme.colorScheme.surfaceVariant)
-            .clickable(onClick = onPick),
-    ) {
-        if (file != null) {
-            AsyncImage(
-                model = file,
-                contentDescription = "Item photo",
-                contentScale = ContentScale.Crop,
-                modifier = Modifier.fillMaxSize(),
+            .size(size.dp)
+            .clip(CircleShape)
+            .background(
+                if (selected) MaterialTheme.colorScheme.primary.copy(alpha = 0.22f)
+                else MaterialTheme.colorScheme.surfaceVariant
             )
-            TextButton(
-                onClick = onClear,
-                modifier = Modifier.align(Alignment.TopEnd),
-            ) { Text("Remove", color = Color.White) }
-        } else {
-            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                Icon(Icons.Default.PhotoCamera, contentDescription = null)
+            .border(
+                width = if (selected) 2.dp else 1.dp,
+                color = if (selected) MaterialTheme.colorScheme.primary
+                else MaterialTheme.colorScheme.outline,
+                shape = CircleShape,
+            )
+            .clickable(onClick = onClick)
+            .semantics { contentDescription = icon.label },
+    ) {
+        Text(icon.glyph, fontSize = (size * 0.5f).sp, textAlign = TextAlign.Center)
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun IconBrowserSheet(selected: String?, onSelect: (String) -> Unit, onDismiss: () -> Unit) {
+    var query by remember { mutableStateOf("") }
+    val results = remember(query) { FoodIcons.search(query) }
+
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+    ) {
+        Column(Modifier.padding(horizontal = 16.dp).padding(bottom = 16.dp)) {
+            OutlinedTextField(
+                value = query,
+                onValueChange = { query = it },
+                label = { Text("Search icons") },
+                singleLine = true,
+                modifier = Modifier.fillMaxWidth(),
+            )
+            if (results.isEmpty()) {
                 Text(
-                    "Add a photo (optional)",
+                    "No icon matches that search.",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(top = 6.dp),
+                    modifier = Modifier.padding(top = 16.dp),
                 )
+                return@Column
+            }
+            // Categories are only worth showing while browsing the whole set; once the list is
+            // filtered the headers are just noise between two or three results.
+            val groups = if (query.isBlank()) {
+                FoodIcons.byCategory.map { (category, icons) -> category.label to icons }
+            } else {
+                listOf("Results" to results)
+            }
+            LazyVerticalGrid(
+                columns = GridCells.Adaptive(54.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+                modifier = Modifier.heightIn(max = 420.dp).padding(top = 12.dp),
+            ) {
+                groups.forEach { (title, icons) ->
+                    item(span = { GridItemSpan(maxLineSpan) }, key = "header-$title") {
+                        Text(
+                            title.uppercase(),
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.padding(top = 6.dp),
+                        )
+                    }
+                    items(icons, key = { it.glyph }) { icon ->
+                        IconChip(
+                            icon = icon,
+                            selected = icon.glyph == selected,
+                            onClick = { onSelect(icon.glyph) },
+                            size = 48,
+                        )
+                    }
+                }
             }
         }
     }

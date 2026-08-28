@@ -30,7 +30,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.carbtrack.domain.CarbMath
-import com.carbtrack.ui.common.PhotoOrInitial
+import com.carbtrack.ui.common.ItemAvatar
 
 private val KEYS_PLAIN = listOf("1", "2", "3", "4", "5", "6", "7", "8", "9", ".", "0", "<")
 private val KEYS_PORTION = listOf("1", "2", "3", "4", "5", "6", "7", "8", "9", ".5", "0", "<")
@@ -55,8 +55,9 @@ fun QuantitySheet(
                 horizontalArrangement = Arrangement.spacedBy(10.dp),
                 modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp),
             ) {
-                PhotoOrInitial(
+                ItemAvatar(
                     state.item.photoPath,
+                    state.item.emoji,
                     state.item.name,
                     Modifier.size(44.dp).clip(RoundedCornerShape(11.dp)),
                     fontSize = 18,

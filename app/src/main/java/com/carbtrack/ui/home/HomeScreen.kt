@@ -115,7 +115,7 @@ fun HomeScreen(
             when (event) {
                 is HomeEvent.EntryAdded -> {
                     val result = snackbar.showSnackbar(
-                        message = "Added ${event.label} Â· ${CarbMath.formatCarbs(event.carbs)} g",
+                        message = "Added ${event.label}, ${CarbMath.formatCarbs(event.carbs)} g",
                         actionLabel = "Undo",
                         duration = SnackbarDuration.Short,
                     )
@@ -340,7 +340,7 @@ private fun MealStrip(entries: List<MealEntry>, onClick: (MealEntry) -> Unit) {
                     .padding(horizontal = 10.dp, vertical = 7.dp),
             ) {
                 Text(
-                    text = entry.label,
+                    text = entry.emoji?.let { "$it " }.orEmpty() + entry.label,
                     fontSize = 12.sp,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,

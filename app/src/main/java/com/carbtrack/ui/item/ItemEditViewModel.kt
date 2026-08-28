@@ -9,6 +9,8 @@ import com.carbtrack.data.entity.FoodItem
 import com.carbtrack.data.repo.FoodRepository
 import com.carbtrack.data.repo.PhotoStore
 import com.carbtrack.domain.CarbMath
+import com.carbtrack.domain.EmojiSuggester
+import com.carbtrack.domain.FoodIcon
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -19,6 +21,14 @@ data class ItemEditState(
     val id: Long = 0,
     val name: String = "",
     val photoPath: String? = null,
+    val emoji: String? = null,
+    /**
+     * True once the user has taken charge of the visuals. While false the icon tracks whatever
+     * the name suggests, which is what makes the zero-tap case work; once true we never
+     * overwrite their choice.
+     */
+    val emojiTouched: Boolean = false,
+    val suggestions: List<FoodIcon> = emptyList(),
     val unit: MeasurementUnit = MeasurementUnit.G,
     val carbsPer100: String = "",
     val portionEnabled: Boolean = false,
@@ -69,6 +79,11 @@ class ItemEditViewModel @Inject constructor(
                         name = item.name,
                         photoPath = item.photoPath,
                         originalPhotoPath = item.photoPath,
+                        emoji = item.emoji,
+                        // Never re-suggest over a saved item: whatever is stored is a decision,
+                        // including the decision to have no icon at all.
+                        emojiTouched = true,
+                        suggestions = EmojiSuggester.suggest(item.name).map { it.icon },
                         unit = item.unit,
                         carbsPer100 = CarbMath.format(item.carbsPer100, 2),
                         portionEnabled = item.portionEnabled,
@@ -78,11 +93,11 @@ class ItemEditViewModel @Inject constructor(
                 }
             }
         } else if (prefill.isNotBlank()) {
-            _state.value = _state.value.copy(name = prefill)
+            _state.value = _state.value.withName(prefill)
         }
     }
 
-    fun setName(value: String) { _state.value = _state.value.copy(name = value) }
+    fun setName(value: String) { _state.value = _state.value.withName(value) }
     fun setUnit(value: MeasurementUnit) { _state.value = _state.value.copy(unit = value) }
     fun setCarbs(value: String) { _state.value = _state.value.copy(carbsPer100 = value.filterNumeric()) }
     fun setPortionLabel(value: String) { _state.value = _state.value.copy(portionLabel = value) }
@@ -92,15 +107,40 @@ class ItemEditViewModel @Inject constructor(
         _state.value = _state.value.copy(portionEnabled = enabled)
     }
 
+    /** Chooses an icon explicitly. A photo would hide it, so the two are mutually exclusive. */
+    fun setEmoji(glyph: String?) {
+        val current = _state.value
+        current.discardUnsavedPhoto()
+        _state.value = current.copy(emoji = glyph, emojiTouched = true, photoPath = null)
+    }
+
     fun pickPhoto(uri: Uri) {
         viewModelScope.launch {
-            val path = photos.importCatalogPhoto(uri)
-            if (path != null) _state.value = _state.value.copy(photoPath = path)
+            val path = photos.importCatalogPhoto(uri) ?: return@launch
+            val current = _state.value
+            current.discardUnsavedPhoto()
+            _state.value = current.copy(photoPath = path, emoji = null, emojiTouched = true)
         }
     }
 
+    /** Removing the photo hands the item back to the name-based suggestion. */
     fun clearPhoto() {
-        _state.value = _state.value.copy(photoPath = null)
+        val current = _state.value
+        current.discardUnsavedPhoto()
+        _state.value = current.copy(
+            photoPath = null,
+            emoji = EmojiSuggester.autoPick(current.name)?.glyph,
+            emojiTouched = false,
+        )
+    }
+
+    /**
+     * Deletes a photo imported during this edit that is about to be replaced or abandoned.
+     * The item's *original* photo is left alone: [save] only unlinks it once the replacement
+     * has actually been persisted.
+     */
+    private fun ItemEditState.discardUnsavedPhoto() {
+        if (photoPath != null && photoPath != originalPhotoPath) photos.delete(photoPath)
     }
 
     fun save() {
@@ -111,6 +151,7 @@ class ItemEditViewModel @Inject constructor(
                 id = s.id,
                 name = s.name.trim(),
                 photoPath = s.photoPath,
+                emoji = s.emoji,
                 unit = s.unit,
                 carbsPer100 = s.carbsValue ?: 0.0,
                 portionEnabled = s.portionEnabled,
@@ -133,6 +174,17 @@ class ItemEditViewModel @Inject constructor(
             _state.value = _state.value.copy(saved = true)
         }
     }
+}
+
+private fun ItemEditState.withName(value: String): ItemEditState {
+    val suggestions = EmojiSuggester.suggest(value)
+    return copy(
+        name = value,
+        suggestions = suggestions.map { it.icon },
+        // Only a confident match is applied unprompted, and only while the user has not chosen
+        // for themselves. A vague name is left with the plain coloured initial.
+        emoji = if (emojiTouched) emoji else suggestions.firstOrNull()?.takeIf { it.confident }?.icon?.glyph,
+    )
 }
 
 private fun String.filterNumeric(): String {

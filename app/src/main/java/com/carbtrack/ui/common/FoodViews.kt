@@ -52,8 +52,9 @@ fun FoodItem.badgeText(): String =
     }
 
 @Composable
-fun PhotoOrInitial(
+fun ItemAvatar(
     photoPath: String?,
+    emoji: String?,
     name: String,
     modifier: Modifier = Modifier,
     fontSize: Int = 28,
@@ -72,12 +73,22 @@ fun PhotoOrInitial(
                 modifier = Modifier.fillMaxSize().background(initialColor(name)),
                 contentAlignment = Alignment.Center,
             ) {
-                Text(
-                    text = name.trim().take(1).uppercase(),
-                    fontSize = fontSize.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = Color.White.copy(alpha = 0.85f),
-                )
+                if (!emoji.isNullOrBlank()) {
+                    Text(
+                        text = emoji,
+                        // Emoji sit smaller inside their em box than a capital letter does,
+                        // so they need a nudge to fill the tile the same way.
+                        fontSize = (fontSize * 1.25f).sp,
+                        textAlign = TextAlign.Center,
+                    )
+                } else {
+                    Text(
+                        text = name.trim().take(1).uppercase(),
+                        fontSize = fontSize.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color.White.copy(alpha = 0.85f),
+                    )
+                }
             }
         }
     }
@@ -94,7 +105,7 @@ fun FoodTile(item: FoodItem, onClick: () -> Unit, modifier: Modifier = Modifier)
             .clickable(onClick = onClick)
             .semantics { contentDescription = "${item.name}, ${item.badgeText()}" },
     ) {
-        PhotoOrInitial(item.photoPath, item.name, Modifier.fillMaxSize())
+        ItemAvatar(item.photoPath, item.emoji, item.name, Modifier.fillMaxSize())
         Text(
             text = item.badgeText(),
             fontSize = 8.sp,
@@ -140,8 +151,9 @@ fun FoodRow(item: FoodItem, onClick: () -> Unit, modifier: Modifier = Modifier) 
             .padding(vertical = 10.dp, horizontal = 4.dp)
             .semantics { contentDescription = "${item.name}, ${item.badgeText()}" },
     ) {
-        PhotoOrInitial(
+        ItemAvatar(
             item.photoPath,
+            item.emoji,
             item.name,
             Modifier.size(44.dp).clip(RoundedCornerShape(11.dp)),
             fontSize = 18,

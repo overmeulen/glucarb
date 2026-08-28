@@ -24,7 +24,9 @@ object AppModule {
     @Provides
     @Singleton
     fun database(@ApplicationContext context: Context): CarbDatabase =
-        Room.databaseBuilder(context, CarbDatabase::class.java, CarbDatabase.NAME).build()
+        Room.databaseBuilder(context, CarbDatabase::class.java, CarbDatabase.NAME)
+            .addMigrations(CarbDatabase.MIGRATION_1_2)
+            .build()
 
     @Provides
     fun foodItemDao(db: CarbDatabase): FoodItemDao = db.foodItemDao()

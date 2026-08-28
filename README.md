@@ -5,9 +5,13 @@ An Android app for counting grams of carbohydrate per meal, built around one goa
 
 ## What it does
 
-- **Your own catalog.** Every item is created by you: name, photo, unit (g or ml) and
+- **Your own catalog.** Every item is created by you: name, picture, unit (g or ml) and
   carbs per 100 g/ml. Items you eat in units — bread, biscuits — get a portion size
   ("1 slice = 32 g") so you enter `2` instead of `64`.
+- **Icons instead of photos.** Typing a name suggests icons from a built-in food set,
+  in English and French ("pêche", "pommes", "pain au chocolat"). A confident match is
+  applied on its own, so most items need no picture at all; the rest of the row offers
+  the same food family, and a photo is still one tap away.
 - **Implicit meals.** A meal is always open. It closes itself after a configurable
   idle gap (90 min by default) or when you tap *Done*. Opening the app never creates
   an empty meal — the first entry does.
@@ -20,9 +24,12 @@ An Android app for counting grams of carbohydrate per meal, built around one goa
 
 ## Design notes
 
-- Entries **snapshot** their quantity and resolved carbs. Editing an item's carb ratio
-  later never rewrites what you already logged.
+- Entries **snapshot** their quantity, resolved carbs and icon. Editing an item's carb
+  ratio or icon later never rewrites what you already logged.
 - Items are **archived**, not deleted, so history keeps its labels.
+- The icon set stops at Emoji 5.0, because `minSdk 26` is Android 8.0 and anything newer
+  would render as an empty box there. Glyphs are declared as code points so the source
+  file stays pure ASCII.
 - AI plate estimates are stored as standalone entries and are *not* added to the
   catalog — that would pollute the time-of-day ranking with one-offs.
 - Catalog photos are downscaled to ~400 px so a large catalog stays inside Android
@@ -45,7 +52,7 @@ Requires JDK 17+ and the Android SDK (compileSdk 35, minSdk 26).
 
 ```
 data/    Room entities, DAOs, repositories, photo storage, settings
-domain/  carb math, item ranking, clipboard parsing — all unit tested
+domain/  carb math, item ranking, icon suggestion, clipboard parsing — all unit tested
 ui/      Compose screens: home, item editor, history, settings
 di/      Hilt wiring
 ```

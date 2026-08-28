@@ -150,7 +150,7 @@ private fun MealCard(meal: MealWithEntries, onEntryClick: (MealEntry) -> Unit) {
                         .padding(vertical = 4.dp),
                 ) {
                     Text(
-                        entry.label + "  " + entryAmount(entry),
+                        entry.emoji?.let { "$it " }.orEmpty() + entry.label + "  " + entryAmount(entry),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.weight(1f),

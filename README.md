@@ -83,6 +83,51 @@ to whichever app opens the file.
 Bump `versionCode` in `app/build.gradle.kts` for every build you intend to install over
 the previous one.
 
+## Publishing to Google Play
+
+Play distributes an **app bundle**, not an APK:
+
+```
+./gradlew bundleRelease    # app/build/outputs/bundle/release/app-release.aab
+```
+
+Requirements met by this build:
+
+| Requirement | Status |
+|---|---|
+| Target API 36, mandatory for new submissions from 31 Aug 2026 | ✅ `targetSdk = 36` |
+| Signed release bundle | ✅ see above |
+| Privacy policy URL | `PRIVACY.md` — must be published at a public URL |
+
+Still to do outside the repo: a Play Console account (US$25 one-off); for new personal
+accounts, a closed test with 12 testers opted in for 14 continuous days before
+production access; a 512×512 icon, a 1024×500 feature graphic and screenshots.
+
+### Data safety declaration
+
+The app declares **no `INTERNET` permission**, so it cannot transmit anything, and it
+requests no camera permission (photos arrive via an intent to the system camera or
+gallery). Two disclosures are nonetheless required:
+
+- **Android Auto Backup is enabled**, so the catalog, history, photos and settings are
+  copied to the user's own Google account. Declare this.
+- The **share-to-AI feature** hands a photo to a user-chosen third-party app. Declare it
+  as a user-initiated transfer; whatever that app does is outside this app's control.
+
+### Name
+
+⚠️ `CarbTrack` is **already published on Play** as `com.kouidev.carbtrack`, a diabetes
+carb/glucose tracker, and a second unrelated `CarbTrack` ships on the iOS App Store.
+Shipping under this name risks a misleading-app-name takedown. See branch
+`rename/glucarb` for a complete, tested rename. `applicationId` is immutable after the
+first published release, so this must be settled before the first upload.
+
+### Regulatory
+
+Counting carbohydrates from user-entered data is not a medical device. Adding an
+**insulin dose or bolus recommendation** would make it one under EU MDR — most likely
+Class IIb, requiring a notified body and CE marking. Do not cross that line casually.
+
 ## Layout
 
 ```

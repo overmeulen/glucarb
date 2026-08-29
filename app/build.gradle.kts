@@ -18,11 +18,11 @@ val keystoreProperties = Properties().apply {
 }
 
 android {
-    namespace = "com.carbtrack"
+    namespace = "com.glucarb"
     compileSdk = 36
 
     defaultConfig {
-        applicationId = "com.carbtrack"
+        applicationId = "com.glucarb"
         minSdk = 26
         targetSdk = 36
         versionCode = 1

@@ -30,6 +30,19 @@ object CarbMath {
     }
 
     /**
+     * Carbs in a single portion, or null when the item is not portioned.
+     *
+     * This is what a portioned item is actually *for*: "a slice is 15 g of carbs" is the
+     * number you dose on, whereas the portion's weight in grams is an implementation
+     * detail the user already stopped caring about once they defined it.
+     */
+    fun carbsPerPortion(item: FoodItem): Double? {
+        if (!item.hasPortions) return null
+        val size = item.portionSize ?: return null
+        return carbsFor(size, item.carbsPer100)
+    }
+
+    /**
      * Resolves a user input into the values persisted on a [com.glucarb.data.entity.MealEntry].
      */
     fun resolve(item: FoodItem, input: Double, asPortions: Boolean): Resolved {

@@ -29,8 +29,21 @@ class CarbMathTest {
     )
 
     @Test
-    fun `carbs scale linearly with quantity`() {
-        assertEquals(48.0, CarbMath.carbsFor(150.0, 32.0), 1e-9)
+    fun `carbs per portion is derived from the portion size`() {
+        // 32 g of bread at 44 g/100 g = 14.08 g of carbs in one slice.
+        assertEquals(14.08, CarbMath.carbsPerPortion(bread)!!, 1e-9)
+    }
+
+    @Test
+    fun `carbs per portion is null when the item has no portions`() {
+        assertNull(CarbMath.carbsPerPortion(pasta))
+        assertNull(CarbMath.carbsPerPortion(milk))
+        // portionEnabled without a size is not usable either.
+        assertNull(CarbMath.carbsPerPortion(bread.copy(portionSize = null)))
+    }
+
+    @Test
+    fun `carbs scale linearly with quantity`() {        assertEquals(48.0, CarbMath.carbsFor(150.0, 32.0), 1e-9)
         assertEquals(0.0, CarbMath.carbsFor(0.0, 32.0), 1e-9)
         assertEquals(32.0, CarbMath.carbsFor(100.0, 32.0), 1e-9)
     }

@@ -10,13 +10,12 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
@@ -69,10 +68,11 @@ fun QuantitySheet(
                             append(CarbMath.format(state.item.carbsPer100))
                             append(" g carbs / 100 ")
                             append(state.item.unit.label)
-                            if (state.item.hasPortions) {
-                                append("  ·  1 ${state.item.portionName} = ")
-                                append(CarbMath.format(state.item.portionSize ?: 0.0))
-                                append(state.item.unit.label)
+                            CarbMath.carbsPerPortion(state.item)?.let { perPortion ->
+                                append("  \u00B7  ")
+                                append(CarbMath.formatCarbs(perPortion))
+                                append(" g / ")
+                                append(state.item.portionName)
                             }
                         },
                         style = MaterialTheme.typography.bodySmall,
@@ -108,12 +108,7 @@ fun QuantitySheet(
                     )
                 }
                 Text(
-                    buildString {
-                        if (state.asPortions) {
-                            append("= ${CarbMath.format(state.quantity)} ${state.item.unit.label}  ·  ")
-                        }
-                        append("${CarbMath.formatCarbs(state.carbs)} g carbs")
-                    },
+                    "${CarbMath.formatCarbs(state.carbs)} g carbs",
                     color = MaterialTheme.colorScheme.primary,
                     fontWeight = FontWeight.SemiBold,
                     style = MaterialTheme.typography.bodyMedium,
@@ -135,6 +130,9 @@ fun QuantitySheet(
                         }".trim(),
                         selected = selected,
                         onClick = { onChip(chip) },
+                        // Equal weights keep four chips on one row on the narrowest phone;
+                        // intrinsic widths would push the last one off-screen.
+                        modifier = Modifier.weight(1f),
                     )
                 }
             }
@@ -159,8 +157,18 @@ fun QuantitySheet(
                     )
                 }
                 if (onDelete != null) {
-                    OutlinedButton(onClick = onDelete, modifier = Modifier.width(64.dp)) {
-                        Text("Del")
+                    // A 64dp outlined button wrapped "Del" onto two lines. Matching Save's
+                    // shape and giving it the error colour reads as destructive without
+                    // needing to be cramped.
+                    Button(
+                        onClick = onDelete,
+                        modifier = Modifier.weight(1f),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.error,
+                            contentColor = MaterialTheme.colorScheme.onError,
+                        ),
+                    ) {
+                        Text("Delete", fontWeight = FontWeight.Bold)
                     }
                 }
             }
@@ -206,9 +214,15 @@ private fun ModeToggle(
 }
 
 @Composable
-fun QuantityChip(text: String, selected: Boolean, onClick: () -> Unit) {
+fun QuantityChip(
+    text: String,
+    selected: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
     Box(
-        modifier = Modifier
+        contentAlignment = Alignment.Center,
+        modifier = modifier
             .clip(RoundedCornerShape(20.dp))
             .background(
                 if (selected) MaterialTheme.colorScheme.primary.copy(alpha = 0.16f)
@@ -220,11 +234,13 @@ fun QuantityChip(text: String, selected: Boolean, onClick: () -> Unit) {
                 RoundedCornerShape(20.dp),
             )
             .clickable(onClick = onClick)
-            .padding(horizontal = 14.dp, vertical = 9.dp),
+            .padding(horizontal = 8.dp, vertical = 9.dp),
     ) {
         Text(
             text,
             fontSize = 13.sp,
+            maxLines = 1,
+            textAlign = TextAlign.Center,
             color = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
             fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal,
         )

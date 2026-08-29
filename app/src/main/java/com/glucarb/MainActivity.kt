@@ -52,6 +52,7 @@ fun GlucarbNavHost() {
         composable(Routes.HOME) {
             HomeScreen(
                 onCreateItem = { prefill -> nav.navigate(Routes.item(0L, prefill)) },
+                onEditItem = { itemId -> nav.navigate(Routes.item(itemId)) },
                 onOpenHistory = { nav.navigate(Routes.HISTORY) },
                 onOpenSettings = { nav.navigate(Routes.SETTINGS) },
             )

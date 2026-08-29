@@ -46,7 +46,7 @@ object EmojiSuggester {
 
     data class Suggestion(val icon: FoodIcon, val score: Int, val confident: Boolean)
 
-    /** Lower-cases and strips accents, so "Pêche" and "peche" are the same word. */
+    /** Lower-cases and strips accents, so "Peche" and "peche" are the same word. */
     fun normalise(text: String): String =
         Normalizer.normalize(text.trim().lowercase(), Normalizer.Form.NFD)
             .replace(COMBINING_MARKS, "")

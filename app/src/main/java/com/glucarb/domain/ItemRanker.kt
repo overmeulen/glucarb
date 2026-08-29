@@ -9,7 +9,7 @@ import kotlin.math.min
 /**
  * Ranks catalog items for the home screen.
  *
- * score = Σ over usage rows of  uses × hourAffinity × recency
+ * score = sum over usage rows of  uses * hourAffinity * recency
  *
  *  - hourAffinity is a Gaussian around the current hour on a 24h circle, so items eaten
  *    at breakfast float to the top in the morning and sink by dinner;

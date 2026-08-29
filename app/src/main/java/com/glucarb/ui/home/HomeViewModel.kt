@@ -202,15 +202,15 @@ class HomeViewModel @Inject constructor(
                 row.quantity
             }
         }
-        val fallback = if (asPortions) listOf(1.0, 2.0, 3.0) else defaultChips(item)
-        return (values + fallback).distinctBy { CarbMath.format(it, 2) }.take(3).sorted()
+        val fallback = if (asPortions) listOf(1.0, 2.0, 3.0, 4.0) else defaultChips(item)
+        return (values + fallback).distinctBy { CarbMath.format(it, 2) }.take(4).sorted()
     }
 
     private fun defaultChips(item: FoodItem): List<Double> =
         if (item.unit == com.glucarb.data.MeasurementUnit.ML) {
-            listOf(100.0, 200.0, 250.0)
+            listOf(100.0, 200.0, 250.0, 330.0)
         } else {
-            listOf(50.0, 100.0, 150.0)
+            listOf(30.0, 50.0, 100.0, 150.0)
         }
 
     fun onKey(key: String) {

@@ -48,7 +48,7 @@ fun AdHocSheet(
             Text("AI plate estimate", style = MaterialTheme.typography.titleMedium)
             Text(
                 if (state.fromClipboard) {
-                    "Found a number in your clipboard — check it and confirm."
+                    "Found a number in your clipboard \u2014 check it and confirm."
                 } else {
                     "Type the number the assistant gave you."
                 },

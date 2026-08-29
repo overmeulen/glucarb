@@ -80,6 +80,7 @@ import java.util.Locale
 @Composable
 fun HomeScreen(
     onCreateItem: (String) -> Unit,
+    onEditItem: (Long) -> Unit,
     onOpenHistory: () -> Unit,
     onOpenSettings: () -> Unit,
     viewModel: HomeViewModel = hiltViewModel(),
@@ -141,7 +142,7 @@ fun HomeScreen(
                         targetPackage = settings.aiTargetPackage,
                     )
                     if (!sent) {
-                        snackbar.showSnackbar("No app could receive the photo â€” check Settings")
+                        snackbar.showSnackbar("No app could receive the photo \u2014 check Settings")
                     }
                 }
             }
@@ -221,7 +222,11 @@ fun HomeScreen(
                     modifier = Modifier.fillMaxSize(),
                 ) {
                     items(state.items, key = { it.id }) { item ->
-                        FoodTile(item = item, onClick = { viewModel.openSheetFor(item) })
+                        FoodTile(
+                            item = item,
+                            onClick = { viewModel.openSheetFor(item) },
+                            onLongClick = { onEditItem(item.id) },
+                        )
                     }
                 }
 
@@ -232,7 +237,11 @@ fun HomeScreen(
                     modifier = Modifier.fillMaxSize(),
                 ) {
                     items(state.items, key = { it.id }) { item ->
-                        FoodRow(item = item, onClick = { viewModel.openSheetFor(item) })
+                        FoodRow(
+                            item = item,
+                            onClick = { viewModel.openSheetFor(item) },
+                            onLongClick = { onEditItem(item.id) },
+                        )
                     }
                 }
             }
@@ -279,7 +288,7 @@ private fun MealHeader(
     Column(Modifier.padding(start = 16.dp, end = 8.dp, top = 12.dp, bottom = 10.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text(
-                if (time == null) "CURRENT MEAL" else "CURRENT MEAL Â· $time",
+                if (time == null) "CURRENT MEAL" else "CURRENT MEAL \u00B7 $time",
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.weight(1f),
@@ -374,7 +383,7 @@ private fun SearchBar(
             value = query,
             onValueChange = onQuery,
             singleLine = true,
-            placeholder = { Text("Searchâ€¦") },
+            placeholder = { Text("Search\u2026") },
             leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
             keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
             shape = RoundedCornerShape(12.dp),
@@ -468,7 +477,7 @@ private fun shareToAi(
             return true
         }
     }
-    val chooser = Intent.createChooser(base, "Estimate carbs withâ€¦")
+    val chooser = Intent.createChooser(base, "Estimate carbs with\u2026")
     if (chooser.resolveActivity(context.packageManager) == null) return false
     context.startActivity(chooser)
     return true

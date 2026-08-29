@@ -26,7 +26,7 @@ import org.robolectric.annotation.Config
  *
  * This is the happy path behind the 3-tap flow: nothing exists, the user picks an item
  * and a quantity, and a meal appears with the right total. It also pins the two rules
- * that are easy to regress — a meal is never created before the first entry, and an
+ * that are easy to regress - a meal is never created before the first entry, and an
  * entry-less meal is discarded rather than closed.
  */
 @RunWith(AndroidJUnit4::class)

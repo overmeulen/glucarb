@@ -92,7 +92,7 @@ fun HistoryScreen(
                     ) {
                         Text(day.label, fontWeight = FontWeight.SemiBold, modifier = Modifier.weight(1f))
                         Text(
-                            "${day.meals.size} meals · ${CarbMath.formatCarbs(day.carbs)} g",
+                            "${day.meals.size} meals \u00B7 ${CarbMath.formatCarbs(day.carbs)} g",
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
@@ -129,7 +129,7 @@ private fun MealCard(meal: MealWithEntries, onEntryClick: (MealEntry) -> Unit) {
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text(
-                if (meal.meal.isOpen) "$time · open" else time,
+                if (meal.meal.isOpen) "$time \u00B7 open" else time,
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.weight(1f),
@@ -170,7 +170,7 @@ private fun MealCard(meal: MealWithEntries, onEntryClick: (MealEntry) -> Unit) {
 private fun entryAmount(entry: MealEntry): String = when {
     entry.foodItemId == null -> ""
     entry.enteredAsPortions && entry.portionsValue != null ->
-        "${CarbMath.format(entry.portionsValue)} ×"
+        "${CarbMath.format(entry.portionsValue)} \u00D7"
     else -> "${CarbMath.format(entry.quantity)} ${entry.unit.label}"
 }
 
@@ -194,7 +194,7 @@ private fun EditEntryDialog(
             Column {
                 Text(
                     if (isAdHoc) {
-                        "Ad-hoc estimate — edit the carb figure directly."
+                        "Ad-hoc estimate \u2014 edit the carb figure directly."
                     } else {
                         "Edit the amount in ${entry.unit.label}."
                     },

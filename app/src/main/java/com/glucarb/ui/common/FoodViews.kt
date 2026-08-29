@@ -2,7 +2,8 @@ package com.glucarb.ui.common
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -46,7 +47,9 @@ fun initialColor(seed: String): Color {
 
 fun FoodItem.badgeText(): String =
     if (hasPortions) {
-        "1 $portionName = ${CarbMath.format(portionSize ?: 0.0)}${unit.label}"
+        // Carbs per portion, not the portion's weight: the weight was only ever an input
+        // used to derive this number, and repeating it costs a scarce line of tile space.
+        "${CarbMath.formatCarbs(CarbMath.carbsPerPortion(this) ?: 0.0)} g/$portionName"
     } else {
         "${CarbMath.format(carbsPer100)}/100${unit.label}"
     }
@@ -94,15 +97,21 @@ fun ItemAvatar(
     }
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun FoodTile(item: FoodItem, onClick: () -> Unit, modifier: Modifier = Modifier) {
+fun FoodTile(
+    item: FoodItem,
+    onClick: () -> Unit,
+    onLongClick: (() -> Unit)? = null,
+    modifier: Modifier = Modifier,
+) {
     Box(
         modifier = modifier
             .aspectRatio(1f)
             .clip(RoundedCornerShape(14.dp))
             .border(1.dp, MaterialTheme.colorScheme.outline, RoundedCornerShape(14.dp))
             .background(MaterialTheme.colorScheme.surfaceVariant)
-            .clickable(onClick = onClick)
+            .combinedClickable(onClick = onClick, onLongClick = onLongClick)
             .semantics { contentDescription = "${item.name}, ${item.badgeText()}" },
     ) {
         ItemAvatar(item.photoPath, item.emoji, item.name, Modifier.fillMaxSize())
@@ -140,14 +149,20 @@ fun FoodTile(item: FoodItem, onClick: () -> Unit, modifier: Modifier = Modifier)
     }
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun FoodRow(item: FoodItem, onClick: () -> Unit, modifier: Modifier = Modifier) {
+fun FoodRow(
+    item: FoodItem,
+    onClick: () -> Unit,
+    onLongClick: (() -> Unit)? = null,
+    modifier: Modifier = Modifier,
+) {
     Row(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(12.dp),
         modifier = modifier
             .fillMaxWidth()
-            .clickable(onClick = onClick)
+            .combinedClickable(onClick = onClick, onLongClick = onLongClick)
             .padding(vertical = 10.dp, horizontal = 4.dp)
             .semantics { contentDescription = "${item.name}, ${item.badgeText()}" },
     ) {

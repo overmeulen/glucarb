@@ -72,9 +72,6 @@ import com.glucarb.data.entity.MealEntry
 import com.glucarb.domain.CarbMath
 import com.glucarb.ui.common.FoodRow
 import com.glucarb.ui.common.FoodTile
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -186,7 +183,6 @@ fun HomeScreen(
 
             MealPanel(
                 carbs = state.mealCarbs,
-                startedAt = state.meal?.meal?.startedAt,
                 entries = state.meal?.entries.orEmpty(),
                 onEntryClick = viewModel::openSheetForEntry,
                 onHistory = onOpenHistory,
@@ -281,15 +277,11 @@ fun HomeScreen(
 @Composable
 private fun MealPanel(
     carbs: Double,
-    startedAt: Long?,
     entries: List<MealEntry>,
     onEntryClick: (MealEntry) -> Unit,
     onHistory: () -> Unit,
     onSettings: () -> Unit,
 ) {
-    val time = startedAt?.takeIf { entries.isNotEmpty() }?.let {
-        SimpleDateFormat("HH:mm", Locale.getDefault()).format(Date(it))
-    }
     Column(
         Modifier
             .fillMaxWidth()
@@ -298,7 +290,10 @@ private fun MealPanel(
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text(
-                if (time == null) "CURRENT MEAL" else "CURRENT MEAL \u00B7 $time",
+                // No start time: this meal is happening now, and the clock is two
+                // centimetres above in the status bar. History is where a time means
+                // something, and it prints its own.
+                "CURRENT MEAL",
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.weight(1f),
@@ -398,7 +393,9 @@ private fun SearchBar(
 ) {
     Row(
         verticalAlignment = Alignment.CenterVertically,
-        modifier = Modifier.fillMaxWidth().padding(start = 14.dp, end = 8.dp, bottom = 8.dp),
+        // Top padding, not just the divider: the field was sitting against the rule and
+        // reading as part of the meal band rather than as the head of the catalog.
+        modifier = Modifier.fillMaxWidth().padding(start = 14.dp, end = 8.dp, top = 12.dp, bottom = 8.dp),
     ) {
         TextField(
             value = query,

@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -61,6 +62,13 @@ fun ItemAvatar(
     name: String,
     modifier: Modifier = Modifier,
     fontSize: Int = 28,
+    /**
+     * Fraction of the height the glyph is centred within, measured from the top.
+     * A tile's name band covers its bottom edge, so a geometrically centred glyph
+     * reads as sitting low; reserving that strip puts it back on the optical centre.
+     * Photos are unaffected - they are cropped to fill and have no dead space.
+     */
+    glyphHeightFraction: Float = 1f,
 ) {
     val file = photoPath?.let { File(it) }?.takeIf { it.exists() }
     Box(modifier = modifier, contentAlignment = Alignment.Center) {
@@ -72,25 +80,30 @@ fun ItemAvatar(
                 modifier = Modifier.fillMaxSize(),
             )
         } else {
-            Box(
-                modifier = Modifier.fillMaxSize().background(initialColor(name)),
-                contentAlignment = Alignment.Center,
-            ) {
-                if (!emoji.isNullOrBlank()) {
-                    Text(
-                        text = emoji,
-                        // Emoji sit smaller inside their em box than a capital letter does,
-                        // so they need a nudge to fill the tile the same way.
-                        fontSize = (fontSize * 1.25f).sp,
-                        textAlign = TextAlign.Center,
-                    )
-                } else {
-                    Text(
-                        text = name.trim().take(1).uppercase(),
-                        fontSize = fontSize.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = Color.White.copy(alpha = 0.85f),
-                    )
+            Box(Modifier.fillMaxSize().background(initialColor(name))) {
+                Box(
+                    contentAlignment = Alignment.Center,
+                    modifier = Modifier
+                        .align(Alignment.TopCenter)
+                        .fillMaxWidth()
+                        .fillMaxHeight(glyphHeightFraction),
+                ) {
+                    if (!emoji.isNullOrBlank()) {
+                        Text(
+                            text = emoji,
+                            // Emoji sit smaller inside their em box than a capital letter does,
+                            // so they need a nudge to fill the tile the same way.
+                            fontSize = (fontSize * 1.25f).sp,
+                            textAlign = TextAlign.Center,
+                        )
+                    } else {
+                        Text(
+                            text = name.trim().take(1).uppercase(),
+                            fontSize = fontSize.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Color.White.copy(alpha = 0.85f),
+                        )
+                    }
                 }
             }
         }
@@ -119,7 +132,13 @@ fun FoodTile(
             .combinedClickable(onClick = onClick, onLongClick = onLongClick)
             .semantics { contentDescription = "${item.name}, ${item.badgeText()}" },
     ) {
-        ItemAvatar(item.photoPath, item.emoji, item.name, Modifier.fillMaxSize())
+        ItemAvatar(
+            item.photoPath,
+            item.emoji,
+            item.name,
+            Modifier.fillMaxSize(),
+            glyphHeightFraction = 0.82f,
+        )
         Text(
             text = item.name,
             fontSize = 11.sp,

@@ -153,12 +153,6 @@ fun SettingsScreen(
                     Text("Reset to default")
                 }
             }
-            Text(
-                "Asking for a bare number keeps the clipboard auto-fill reliable. " +
-                    "Glucarb still parses answers wrapped in a sentence, but not always.",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
 
             SectionTitle("Meals")
 

@@ -97,6 +97,11 @@ fun ItemAvatar(
     }
 }
 
+/**
+ * A tile carries only the picture and the name. The carb ratio was noise at this size:
+ * it is never the thing being chosen between, and the quantity sheet shows it a tap
+ * later anyway. It stays in the accessibility label, which costs no space.
+ */
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun FoodTile(
@@ -115,18 +120,6 @@ fun FoodTile(
             .semantics { contentDescription = "${item.name}, ${item.badgeText()}" },
     ) {
         ItemAvatar(item.photoPath, item.emoji, item.name, Modifier.fillMaxSize())
-        Text(
-            text = item.badgeText(),
-            fontSize = 8.sp,
-            color = MaterialTheme.colorScheme.primary,
-            maxLines = 1,
-            modifier = Modifier
-                .align(Alignment.TopEnd)
-                .padding(4.dp)
-                .clip(RoundedCornerShape(5.dp))
-                .background(Color.Black.copy(alpha = 0.55f))
-                .padding(horizontal = 4.dp, vertical = 2.dp),
-        )
         Text(
             text = item.name,
             fontSize = 11.sp,

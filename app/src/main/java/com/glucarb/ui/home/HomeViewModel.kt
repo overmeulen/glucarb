@@ -34,6 +34,12 @@ data class QuantitySheetState(
     val asPortions: Boolean,
     val input: String,
     val chips: List<Double> = emptyList(),
+    /**
+     * True while [input] is a value the app proposed rather than one the user typed.
+     * The first keystroke then replaces it instead of appending, which is what a
+     * calculator does and what "100" -> tap 5 -> "5" needs to mean.
+     */
+    val pristine: Boolean = true,
 ) {
     val value: Double get() = input.toDoubleOrNull() ?: 0.0
 
@@ -57,6 +63,7 @@ data class AdHocSheetState(
     val photoPath: String?,
     val input: String,
     val fromClipboard: Boolean = false,
+    val pristine: Boolean = true,
 )
 
 data class HomeUiState(
@@ -215,26 +222,45 @@ class HomeViewModel @Inject constructor(
 
     fun onKey(key: String) {
         val current = _sheet.value ?: return
-        _sheet.value = current.copy(input = applyKey(current.input, key))
+        _sheet.value = current.copy(input = applyKey(current.input, key, current.pristine), pristine = false)
     }
 
     fun onAdHocKey(key: String) {
         val current = _adHocSheet.value ?: return
-        _adHocSheet.value = current.copy(input = applyKey(current.input, key), fromClipboard = false)
+        _adHocSheet.value = current.copy(
+            input = applyKey(current.input, key, current.pristine),
+            fromClipboard = false,
+            pristine = false,
+        )
     }
 
-    private fun applyKey(input: String, key: String): String = when (key) {
-        "<" -> input.dropLast(1)
-        "." -> if (input.contains('.')) input else (input.ifEmpty { "0" } + ".")
-        ".5" -> if (input.contains('.')) input else (input.ifEmpty { "0" } + ".5")
-        else -> {
-            val next = if (input == "0") key else input + key
-            if (next.length > 6) input else next
+    /**
+     * [pristine] means the shown value was proposed by the app, so the first digit
+     * replaces it. Backspace is exempt: deleting a digit off a proposed value is a
+     * deliberate edit of it, not the start of a new number.
+     */
+    private fun applyKey(current: String, key: String, pristine: Boolean): String {
+        val input = if (pristine && key != "<") "" else current
+        return when (key) {
+            "<" -> input.dropLast(1)
+            "." -> if (input.contains('.')) input else (input.ifEmpty { "0" } + ".")
+            ".5" -> if (input.contains('.')) input else (input.ifEmpty { "0" } + ".5")
+            else -> {
+                val next = if (input == "0") key else input + key
+                if (next.length > 6) input else next
+            }
         }
     }
 
+    /**
+     * Quick values commit straight away. They exist to make the common case a single
+     * tap, and a confirmation tap after the value is already correct is the click this
+     * screen is built to avoid. The add is undoable from the snackbar.
+     */
     fun setSheetValue(value: Double) {
-        _sheet.value = _sheet.value?.copy(input = CarbMath.format(value, 2))
+        val current = _sheet.value ?: return
+        _sheet.value = current.copy(input = CarbMath.format(value, 2), pristine = true)
+        commitSheet()
     }
 
     fun togglePortionMode() {
@@ -251,6 +277,7 @@ class HomeViewModel @Inject constructor(
                 asPortions = toPortions,
                 input = CarbMath.format(converted, 2),
                 chips = chipsFor(current.item, toPortions),
+                pristine = true,
             )
         }
     }

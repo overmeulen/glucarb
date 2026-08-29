@@ -43,6 +43,9 @@ interface MealDao {
     @Query("SELECT * FROM meals WHERE closedAt IS NULL ORDER BY startedAt DESC LIMIT 1")
     suspend fun getOpenMeal(): Meal?
 
+    @Query("SELECT * FROM meals WHERE id = :id")
+    suspend fun getMeal(id: Long): Meal?
+
     @Transaction
     @Query("SELECT * FROM meals WHERE closedAt IS NULL ORDER BY startedAt DESC LIMIT 1")
     fun observeOpenMeal(): Flow<MealWithEntries?>

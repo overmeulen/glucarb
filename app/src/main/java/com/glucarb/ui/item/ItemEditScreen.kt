@@ -156,7 +156,7 @@ fun ItemEditScreen(
                     .padding(horizontal = 14.dp, vertical = 10.dp),
             ) {
                 Column(Modifier.weight(1f)) {
-                    Text("Sold in portions")
+                    Text("Available in portions")
                     Text(
                         "Slices, units, spoons...",
                         style = MaterialTheme.typography.bodySmall,

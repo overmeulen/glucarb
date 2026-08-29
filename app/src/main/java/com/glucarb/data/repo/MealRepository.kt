@@ -133,13 +133,33 @@ class MealRepository(
         dao.updateEntry(updated)
     }
 
+    /**
+     * Removing the last entry removes the meal itself. An empty meal has no meaning:
+     * keeping it would leave a start time in the header with nothing under it, and a
+     * zero-carb row in the history.
+     */
     suspend fun deleteEntry(entryId: Long) {
         val entry = dao.getEntry(entryId) ?: return
         dao.deleteEntry(entryId)
         if (entry.isAdHoc) photos.delete(entry.photoPath)
+        if (dao.entryCount(entry.mealId) == 0) dao.deleteMeal(entry.mealId)
     }
 
+    /**
+     * Undo of [deleteEntry]. The meal may have been removed along with its last entry,
+     * and meal_entries cascades from meals, so the meal has to come back first or the
+     * insert fails on the foreign key.
+     */
     suspend fun restoreEntry(entry: MealEntry) {
+        if (dao.getMeal(entry.mealId) == null) {
+            dao.insertMeal(
+                Meal(
+                    id = entry.mealId,
+                    startedAt = entry.createdAt,
+                    lastActivityAt = entry.createdAt,
+                )
+            )
+        }
         dao.insertEntry(entry.copy(id = 0))
     }
 

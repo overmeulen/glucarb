@@ -10,14 +10,15 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
@@ -26,7 +27,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.GridView
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Search
@@ -184,18 +184,14 @@ fun HomeScreen(
     ) { padding ->
         Column(Modifier.fillMaxSize().padding(padding)) {
 
-            MealHeader(
+            MealPanel(
                 carbs = state.mealCarbs,
                 startedAt = state.meal?.meal?.startedAt,
-                canClose = (state.meal?.entries?.isNotEmpty() == true),
-                onDone = viewModel::closeMeal,
+                entries = state.meal?.entries.orEmpty(),
+                onEntryClick = viewModel::openSheetForEntry,
                 onHistory = onOpenHistory,
                 onSettings = onOpenSettings,
             )
-
-            state.meal?.entries?.takeIf { it.isNotEmpty() }?.let { entries ->
-                MealStrip(entries = entries, onClick = viewModel::openSheetForEntry)
-            }
 
             SearchBar(
                 query = state.query,
@@ -273,19 +269,33 @@ fun HomeScreen(
     }
 }
 
+/**
+ * The meal occupies one band at the top: the running total on the left, everything
+ * logged into it on the right. Putting the entries beside the number instead of under
+ * it buys back a full row of catalog, and the total is the one figure worth shouting.
+ *
+ * There is no Done button. A meal ends by going quiet for the configured timeout, which
+ * is what actually happens when you finish eating; a button to say so was a tap that
+ * never carried information.
+ */
 @Composable
-private fun MealHeader(
+private fun MealPanel(
     carbs: Double,
     startedAt: Long?,
-    canClose: Boolean,
-    onDone: () -> Unit,
+    entries: List<MealEntry>,
+    onEntryClick: (MealEntry) -> Unit,
     onHistory: () -> Unit,
     onSettings: () -> Unit,
 ) {
-    val time = startedAt?.let {
+    val time = startedAt?.takeIf { entries.isNotEmpty() }?.let {
         SimpleDateFormat("HH:mm", Locale.getDefault()).format(Date(it))
     }
-    Column(Modifier.padding(start = 16.dp, end = 8.dp, top = 12.dp, bottom = 10.dp)) {
+    Column(
+        Modifier
+            .fillMaxWidth()
+            .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.32f))
+            .padding(start = 16.dp, end = 8.dp, top = 10.dp, bottom = 12.dp),
+    ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text(
                 if (time == null) "CURRENT MEAL" else "CURRENT MEAL \u00B7 $time",
@@ -300,72 +310,83 @@ private fun MealHeader(
                 Icon(Icons.Default.Settings, contentDescription = "Settings")
             }
         }
-        Row(verticalAlignment = Alignment.Bottom) {
-            Row(
-                verticalAlignment = Alignment.Bottom,
-                modifier = Modifier.weight(1f).semantics {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Column(
+                Modifier.semantics {
                     contentDescription = "Current meal: ${CarbMath.formatCarbs(carbs)} grams of carbs"
-                },
+                }
             ) {
                 Text(
                     CarbMath.formatCarbs(carbs),
-                    fontSize = 46.sp,
+                    fontSize = 64.sp,
+                    lineHeight = 66.sp,
                     fontWeight = FontWeight.Bold,
                 )
                 Text(
-                    " g carbs",
-                    fontSize = 16.sp,
+                    "g carbs",
+                    fontSize = 13.sp,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(bottom = 7.dp),
                 )
             }
-            if (canClose) {
-                Button(onClick = onDone, modifier = Modifier.padding(end = 8.dp)) {
-                    Icon(Icons.Default.Check, contentDescription = null, modifier = Modifier.size(16.dp))
-                    Text("  Done", fontWeight = FontWeight.SemiBold)
+            if (entries.isNotEmpty()) {
+                // Two columns once a third entry arrives, so a big meal stays inside the
+                // band instead of pushing the catalog off the screen. The grid scrolls.
+                LazyVerticalGrid(
+                    columns = GridCells.Fixed(if (entries.size > 2) 2 else 1),
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    verticalArrangement = Arrangement.spacedBy(6.dp),
+                    modifier = Modifier
+                        .weight(1f)
+                        .heightIn(max = 108.dp)
+                        .padding(start = 14.dp, end = 8.dp),
+                ) {
+                    items(entries, key = { it.id }) { entry ->
+                        MealEntryChip(entry = entry, onClick = { onEntryClick(entry) })
+                    }
                 }
             }
         }
     }
+    // A hard edge, not a gap: above it is what you have eaten, below it is what you
+    // might add, and the two were being read as one list.
+    Box(
+        Modifier
+            .fillMaxWidth()
+            .height(1.dp)
+            .background(MaterialTheme.colorScheme.outline),
+    )
 }
 
 @Composable
-private fun MealStrip(entries: List<MealEntry>, onClick: (MealEntry) -> Unit) {
-    LazyRow(
-        horizontalArrangement = Arrangement.spacedBy(6.dp),
-        contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 14.dp),
-        modifier = Modifier.fillMaxWidth().padding(bottom = 10.dp),
+private fun MealEntryChip(entry: MealEntry, onClick: () -> Unit) {
+    val pending = entry.aiPending
+    val border = if (pending) MaterialTheme.colorScheme.tertiary else MaterialTheme.colorScheme.outline
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier
+            .clip(RoundedCornerShape(10.dp))
+            .background(MaterialTheme.colorScheme.surface)
+            .border(1.dp, border, RoundedCornerShape(10.dp))
+            .clickable { onClick() }
+            .padding(horizontal = 8.dp, vertical = 6.dp),
     ) {
-        items(entries, key = { it.id }) { entry ->
-            val pending = entry.aiPending
-            val border = if (pending) MaterialTheme.colorScheme.tertiary else MaterialTheme.colorScheme.outline
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier
-                    .clip(RoundedCornerShape(10.dp))
-                    .background(MaterialTheme.colorScheme.surface)
-                    .border(1.dp, border, RoundedCornerShape(10.dp))
-                    .clickable { onClick(entry) }
-                    .padding(horizontal = 10.dp, vertical = 7.dp),
-            ) {
-                Text(
-                    text = entry.emoji?.let { "$it " }.orEmpty() + entry.label,
-                    fontSize = 12.sp,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                )
-                Text(
-                    text = if (pending) "  pending" else "  ${CarbMath.formatCarbs(entry.carbs)} g",
-                    fontSize = 12.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = if (pending) MaterialTheme.colorScheme.tertiary
-                    else MaterialTheme.colorScheme.primary,
-                )
-            }
-        }
+        Text(
+            text = entry.emoji?.let { "$it " }.orEmpty() + entry.label,
+            fontSize = 12.sp,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.weight(1f, fill = false),
+        )
+        Text(
+            text = if (pending) " \u2026" else "  ${CarbMath.formatCarbs(entry.carbs)}",
+            fontSize = 12.sp,
+            fontWeight = FontWeight.Bold,
+            maxLines = 1,
+            color = if (pending) MaterialTheme.colorScheme.tertiary
+            else MaterialTheme.colorScheme.primary,
+        )
     }
 }
-
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

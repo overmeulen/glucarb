@@ -20,7 +20,7 @@ data class AppSettings(
     val aiPrompt: String = DEFAULT_AI_PROMPT,
 ) {
     companion object {
-        const val DEFAULT_IDLE_MINUTES = 90
+        const val DEFAULT_IDLE_MINUTES = 30
         const val DEFAULT_AI_PROMPT =
             "Analyse this photo of food. Reply with ONLY a single number: " +
                 "the total grams of carbohydrates in the food shown. No text, no units."

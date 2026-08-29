@@ -125,6 +125,21 @@ registrable as a trademark.
 `applicationId` is immutable after the first published release, so if you want a
 different name again, now is the only time.
 
+### Two one-way doors
+
+**Free → paid is impossible.** Google's policy is explicit: *"Once your app has been
+offered for free, the app can't be changed to paid. If you want to charge for the app,
+you need to create a new app with a new package name and set a price."* Paid → free is
+allowed. So if there is any chance of ever charging, either launch paid or build the
+revenue in as an in-app purchase, which can be added to a free app at any time.
+
+**Choose your app signing key at enrolment.** When you first upload, Play App Signing
+offers to generate a signing key for you. If you accept, Play-delivered builds carry a
+*different* certificate from locally sideloaded ones, and installing from Play over a
+sideloaded copy fails — the user must uninstall first and loses their data. Instead
+upload `glucarb-release.jks` as the **app signing key**, so both are signed by the same
+certificate and updates apply in place.
+
 ### Regulatory
 
 Counting carbohydrates from user-entered data is not a medical device. Adding an

@@ -11,6 +11,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.File
 import java.io.FileOutputStream
+import java.io.InputStream
 import java.util.UUID
 
 /**
@@ -52,16 +53,33 @@ class PhotoStore(private val context: Context) {
 
     /** Copies [source] into the catalog directory, downscaled. Returns the stored path. */
     suspend fun importCatalogPhoto(source: Uri): String? =
-        importScaled(source, catalogDir, CATALOG_MAX_EDGE)
+        importScaled({ context.contentResolver.openInputStream(source) }, catalogDir, CATALOG_MAX_EDGE)
 
     /** Copies [source] into the ad-hoc directory, downscaled. Returns the stored path. */
     suspend fun importAdHocPhoto(source: Uri): String? =
-        importScaled(source, adhocDir, ADHOC_MAX_EDGE)
+        importScaled({ context.contentResolver.openInputStream(source) }, adhocDir, ADHOC_MAX_EDGE)
 
-    private suspend fun importScaled(source: Uri, target: File, maxEdge: Int): String? =
+    /**
+     * Imports a file this app owns, reading it directly.
+     *
+     * A camera capture lands in our own `files/share`, so going back out through
+     * FileProvider and the ContentResolver to read it again adds a permission and
+     * resolution path that can fail for reasons that have nothing to do with the image.
+     */
+    suspend fun importCatalogPhoto(source: File): String? =
+        importScaled({ source.inputStream() }, catalogDir, CATALOG_MAX_EDGE)
+
+    suspend fun importAdHocPhoto(source: File): String? =
+        importScaled({ source.inputStream() }, adhocDir, ADHOC_MAX_EDGE)
+
+    private suspend fun importScaled(
+        open: () -> InputStream?,
+        target: File,
+        maxEdge: Int,
+    ): String? =
         withContext(Dispatchers.IO) {
             runCatching {
-                val bitmap = decodeScaled(source, maxEdge) ?: return@runCatching null
+                val bitmap = decodeScaled(open, maxEdge) ?: return@runCatching null
                 val out = File(target, "img-${UUID.randomUUID()}.jpg")
                 FileOutputStream(out).use { stream ->
                     bitmap.compress(Bitmap.CompressFormat.JPEG, 85, stream)
@@ -91,9 +109,9 @@ class PhotoStore(private val context: Context) {
         }
     }
 
-    private fun decodeScaled(uri: Uri, maxEdge: Int): Bitmap? {
+    private fun decodeScaled(open: () -> InputStream?, maxEdge: Int): Bitmap? {
         val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
-        context.contentResolver.openInputStream(uri)?.use {
+        open()?.use {
             BitmapFactory.decodeStream(it, null, bounds)
         } ?: return null
 
@@ -104,11 +122,11 @@ class PhotoStore(private val context: Context) {
         while (longest / (sample * 2) >= maxEdge) sample *= 2
 
         val opts = BitmapFactory.Options().apply { inSampleSize = sample }
-        val decoded = context.contentResolver.openInputStream(uri)?.use {
+        val decoded = open()?.use {
             BitmapFactory.decodeStream(it, null, opts)
         } ?: return null
 
-        val rotated = applyExifRotation(uri, decoded)
+        val rotated = applyExifRotation(open, decoded)
         val edge = maxOf(rotated.width, rotated.height)
         if (edge <= maxEdge) return rotated
 
@@ -123,9 +141,9 @@ class PhotoStore(private val context: Context) {
         return scaled
     }
 
-    private fun applyExifRotation(uri: Uri, bitmap: Bitmap): Bitmap {
+    private fun applyExifRotation(open: () -> InputStream?, bitmap: Bitmap): Bitmap {
         val degrees = runCatching {
-            context.contentResolver.openInputStream(uri)?.use { input ->
+            open()?.use { input ->
                 when (
                     ExifInterface(input).getAttributeInt(
                         ExifInterface.TAG_ORIENTATION,

@@ -14,6 +14,7 @@ import com.glucarb.domain.FoodIcon
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -68,11 +69,23 @@ class ItemEditViewModel @Inject constructor(
     private val _state = MutableStateFlow(ItemEditState())
     val state: StateFlow<ItemEditState> = _state
 
+    private val _errors = kotlinx.coroutines.channels.Channel<String>(kotlinx.coroutines.channels.Channel.BUFFERED)
+    val errors = _errors.receiveAsFlow()
+
     private val itemId: Long = savedStateHandle.get<String>("itemId")?.toLongOrNull() ?: 0L
+
+    /**
+     * The initial load of an existing item.
+     *
+     * Anything that mutates state asynchronously must wait for this. Taking a photo can get
+     * this process killed, and on the way back the import would otherwise finish first and
+     * be overwritten wholesale when the reload landed - a photo that silently never appears.
+     */
+    private val loadJob: kotlinx.coroutines.Job
 
     init {
         val prefill = savedStateHandle.get<String>("name").orEmpty()
-        if (itemId > 0L) {
+        loadJob = if (itemId > 0L) {
             viewModelScope.launch {
                 repo.get(itemId)?.let { item ->
                     _state.value = ItemEditState(
@@ -93,8 +106,9 @@ class ItemEditViewModel @Inject constructor(
                     )
                 }
             }
-        } else if (prefill.isNotBlank()) {
-            _state.value = _state.value.withName(prefill)
+        } else {
+            if (prefill.isNotBlank()) _state.value = _state.value.withName(prefill)
+            kotlinx.coroutines.CompletableDeferred(Unit)
         }
     }
 
@@ -117,7 +131,12 @@ class ItemEditViewModel @Inject constructor(
 
     fun pickPhoto(uri: Uri) {
         viewModelScope.launch {
-            val path = photos.importCatalogPhoto(uri) ?: return@launch
+            loadJob.join()
+            val path = photos.importCatalogPhoto(uri)
+            if (path == null) {
+                _errors.send("That photo could not be read")
+                return@launch
+            }
             val current = _state.value
             current.discardUnsavedPhoto()
             _state.value = current.copy(photoPath = path, emoji = null, emojiTouched = true)
@@ -133,12 +152,22 @@ class ItemEditViewModel @Inject constructor(
     /**
      * Imports a just-taken photo. The scratch file is removed once the downscaled copy
      * exists, and kept if the import failed so nothing is lost silently.
+     *
+     * Every failure path reports: a capture that quietly does nothing is indistinguishable
+     * from a broken button, and that is exactly how the last one was found.
      */
     fun photoTaken(scratch: java.io.File) {
         viewModelScope.launch {
-            if (!photos.hasContent(scratch)) return@launch
-            val path = photos.importCatalogPhoto(photos.uriFor(scratch))
-            if (path == null) return@launch
+            loadJob.join()
+            if (!photos.hasContent(scratch)) {
+                _errors.send("The camera did not save a photo \u2014 try again")
+                return@launch
+            }
+            val path = photos.importCatalogPhoto(scratch)
+            if (path == null) {
+                _errors.send("That photo could not be read")
+                return@launch
+            }
             photos.delete(scratch.absolutePath)
             val current = _state.value
             current.discardUnsavedPhoto()

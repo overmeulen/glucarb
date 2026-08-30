@@ -346,24 +346,40 @@ class HomeViewModel @Inject constructor(
      * the share intent. The photo is stored twice on purpose: a downscaled copy we keep,
      * and a scratch copy in files/share that the target app can read through FileProvider.
      */
+    /**
+     * Registers a plate photo picked from the gallery.
+     */
     fun startAiEstimate(sourceUri: android.net.Uri) {
+        viewModelScope.launch { finishAiEstimate(photos.importAdHocPhoto(sourceUri)) }
+    }
+
+    /**
+     * Registers a photo this app just captured.
+     *
+     * Takes the [java.io.File] rather than the content URI handed to the camera: the path
+     * of a content URI is a provider-internal name, not a location on disk, so it cannot be
+     * turned back into a file. Reading our own capture directly also removes FileProvider
+     * from the read path entirely.
+     */
+    fun startAiEstimate(capture: java.io.File) {
         viewModelScope.launch {
-            // Separate messages on purpose: "the camera gave us nothing" and "we have bytes
-            // but cannot decode them" have completely different causes, and one error string
-            // covering both made the last bug much harder to place.
-            val scratch = java.io.File(sourceUri.path.orEmpty())
-            if (scratch.parentFile?.name == "share" && !photos.hasContent(scratch)) {
-                _events.send(HomeEvent.Message("The camera did not return a photo \u2014 try again"))
+            if (!photos.hasContent(capture)) {
+                _events.send(HomeEvent.Message("The camera did not save a photo \u2014 try again"))
                 return@launch
             }
-            val stored = photos.importAdHocPhoto(sourceUri)
-            if (stored == null) {
-                _events.send(HomeEvent.Message("Could not read that photo"))
-                return@launch
-            }
-            val entryId = mealRepo.addPendingAiEntry(stored)
-            _events.send(HomeEvent.ShareForAi(entryId, stored, settings.value.aiPrompt))
+            val stored = photos.importAdHocPhoto(capture)
+            if (stored != null) photos.delete(capture.absolutePath)
+            finishAiEstimate(stored)
         }
+    }
+
+    private suspend fun finishAiEstimate(stored: String?) {
+        if (stored == null) {
+            _events.send(HomeEvent.Message("That photo could not be read"))
+            return
+        }
+        val entryId = mealRepo.addPendingAiEntry(stored)
+        _events.send(HomeEvent.ShareForAi(entryId, stored, settings.value.aiPrompt))
     }
 
     /** Records the assistant chosen from the home screen on first use. */

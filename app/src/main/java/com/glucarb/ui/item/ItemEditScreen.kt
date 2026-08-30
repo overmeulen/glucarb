@@ -37,6 +37,8 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -96,8 +98,13 @@ fun ItemEditScreen(
 
     val nameFocus = remember { FocusRequester() }
     val keyboard = LocalSoftwareKeyboardController.current
+    val snackbar = remember { SnackbarHostState() }
 
     LaunchedEffect(state.saved) { if (state.saved) onDone() }
+
+    LaunchedEffect(Unit) {
+        viewModel.errors.collect { snackbar.showSnackbar(it) }
+    }
 
     // A new item always starts with the name, so opening the keyboard there saves a tap.
     // An edit does not: the user came here to change one specific field.
@@ -109,6 +116,7 @@ fun ItemEditScreen(
     }
 
     Scaffold(
+        snackbarHost = { SnackbarHost(snackbar) },
         topBar = {
             TopAppBar(
                 title = { Text(if (state.id == 0L) "New item" else "Edit item") },

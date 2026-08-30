@@ -98,9 +98,9 @@ fun HomeScreen(
     val cameraLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.TakePicture()
     ) { ok ->
-        val uri = captureUri
+        val path = captureUri
         captureUri = null
-        if (ok && uri != null) viewModel.startAiEstimate(Uri.parse(uri))
+        if (ok && path != null) viewModel.startAiEstimate(java.io.File(path))
     }
 
     val galleryLauncher = rememberLauncherForActivityResult(
@@ -109,7 +109,8 @@ fun HomeScreen(
 
     val launchCapture: () -> Unit = {
         val (file, uri) = viewModel.newCaptureTarget()
-        captureUri = uri.toString()
+        // The *file* is what we keep: a content URI cannot be turned back into a path.
+        captureUri = file.absolutePath
         runCatching { cameraLauncher.launch(uri) }.onFailure {
             file.delete()
             captureUri = null

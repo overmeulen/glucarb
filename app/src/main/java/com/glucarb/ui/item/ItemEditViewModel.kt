@@ -60,6 +60,7 @@ data class ItemEditState(
 @HiltViewModel
 class ItemEditViewModel @Inject constructor(
     private val repo: FoodRepository,
+    private val meals: com.glucarb.data.repo.MealRepository,
     private val photos: PhotoStore,
     savedStateHandle: SavedStateHandle,
 ) : ViewModel() {
@@ -123,6 +124,28 @@ class ItemEditViewModel @Inject constructor(
         }
     }
 
+    /** Capture target for "take a photo". The scratch file lives in files/share. */
+    fun newCaptureTarget(): Pair<java.io.File, Uri> {
+        val file = photos.newShareFile()
+        return file to photos.uriFor(file)
+    }
+
+    /**
+     * Imports a just-taken photo. The scratch file is removed once the downscaled copy
+     * exists, and kept if the import failed so nothing is lost silently.
+     */
+    fun photoTaken(scratch: java.io.File) {
+        viewModelScope.launch {
+            if (!photos.hasContent(scratch)) return@launch
+            val path = photos.importCatalogPhoto(photos.uriFor(scratch))
+            if (path == null) return@launch
+            photos.delete(scratch.absolutePath)
+            val current = _state.value
+            current.discardUnsavedPhoto()
+            _state.value = current.copy(photoPath = path, emoji = null, emojiTouched = true)
+        }
+    }
+
     /** Removing the photo hands the item back to the name-based suggestion. */
     fun clearPhoto() {
         val current = _state.value
@@ -158,7 +181,10 @@ class ItemEditViewModel @Inject constructor(
                 portionSize = if (s.portionEnabled) s.portionValue else null,
                 portionLabel = if (s.portionEnabled) s.portionLabel.trim().ifBlank { "portion" } else null,
             )
-            repo.save(item)
+            val savedId = repo.save(item)
+            // A saved edit is a correction, and the meal being assembled right now must
+            // reflect it. Closed meals keep the figures they were logged with.
+            meals.refreshOpenMealFor(item.copy(id = savedId))
             // A replaced photo is only unlinked once the new one is safely persisted.
             if (s.originalPhotoPath != null && s.originalPhotoPath != s.photoPath) {
                 photos.delete(s.originalPhotoPath)

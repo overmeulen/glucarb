@@ -167,5 +167,43 @@ class MealRepository(
 
     suspend fun frequentQuantities(itemId: Long): List<QuantityRow> = dao.frequentQuantities(itemId)
 
+    /**
+     * Re-applies a catalog item to the entries of the *open* meal only.
+     *
+     * Entries snapshot their carb figure on purpose, so that correcting an item today
+     * cannot silently rewrite what last month's meals claimed. But the meal you are
+     * still assembling is not history: editing an item mid-meal is how you fix a figure
+     * you just mistyped, and leaving the total stale makes the correction pointless.
+     * Closed meals keep their snapshots.
+     *
+     * The user's original input is preserved - the portion count if they entered
+     * portions, otherwise the weight - and everything derived from it is recomputed.
+     */
+    suspend fun refreshOpenMealFor(item: FoodItem) {
+        dao.openMealEntriesFor(item.id).forEach { entry ->
+            val asPortions = entry.enteredAsPortions && item.hasPortions
+            val input = if (asPortions) {
+                entry.portionsValue
+                    ?: CarbMath.quantityToPortions(entry.quantity, item.portionSize)
+                    ?: return@forEach
+            } else {
+                entry.quantity
+            }
+            val resolved = CarbMath.resolve(item, input, asPortions)
+            dao.updateEntry(
+                entry.copy(
+                    label = item.name,
+                    emoji = item.emoji,
+                    photoPath = item.photoPath,
+                    quantity = resolved.quantity,
+                    unit = item.unit,
+                    enteredAsPortions = resolved.enteredAsPortions,
+                    portionsValue = resolved.portionsValue,
+                    carbs = resolved.carbs,
+                )
+            )
+        }
+    }
+
     suspend fun lastEntryFor(itemId: Long): MealEntry? = dao.lastEntryFor(itemId)
 }

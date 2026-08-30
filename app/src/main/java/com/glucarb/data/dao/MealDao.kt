@@ -120,6 +120,15 @@ interface MealDao {
 
     @Query(
         """
+        SELECT e.* FROM meal_entries e
+        JOIN meals m ON m.id = e.mealId
+        WHERE m.closedAt IS NULL AND e.foodItemId = :itemId
+        """
+    )
+    suspend fun openMealEntriesFor(itemId: Long): List<MealEntry>
+
+    @Query(
+        """
         SELECT * FROM meal_entries
         WHERE foodItemId = :itemId AND aiPending = 0
         ORDER BY createdAt DESC LIMIT 1

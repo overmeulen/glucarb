@@ -17,6 +17,12 @@ data class AppSettings(
     val gridMode: Boolean = true,
     val aiTargetPackage: String? = null,
     val aiTargetLabel: String? = null,
+    /**
+     * Whether the user has actually picked an assistant. A null [aiTargetPackage] alone
+     * is ambiguous - it is both "ask me every time" and "never been asked" - so the
+     * first use of the camera button cannot tell whether to prompt without this.
+     */
+    val aiTargetChosen: Boolean = false,
     val aiPrompt: String = DEFAULT_AI_PROMPT,
 ) {
     companion object {
@@ -36,6 +42,7 @@ class SettingsRepository(private val context: Context) {
         val GRID = intPreferencesKey("grid_mode")
         val AI_PKG = stringPreferencesKey("ai_target_package")
         val AI_LABEL = stringPreferencesKey("ai_target_label")
+        val AI_CHOSEN = intPreferencesKey("ai_target_chosen")
         val AI_PROMPT = stringPreferencesKey("ai_prompt")
     }
 
@@ -45,6 +52,7 @@ class SettingsRepository(private val context: Context) {
             gridMode = (p[Keys.GRID] ?: 1) == 1,
             aiTargetPackage = p[Keys.AI_PKG],
             aiTargetLabel = p[Keys.AI_LABEL],
+            aiTargetChosen = (p[Keys.AI_CHOSEN] ?: 0) == 1,
             aiPrompt = p[Keys.AI_PROMPT] ?: AppSettings.DEFAULT_AI_PROMPT,
         )
     }
@@ -57,8 +65,10 @@ class SettingsRepository(private val context: Context) {
         context.dataStore.edit { it[Keys.IDLE] = minutes.coerceIn(5, 24 * 60) }
     }
 
+    /** Records an explicit choice, including the explicit choice to be asked every time. */
     suspend fun setAiTarget(packageName: String?, label: String?) {
         context.dataStore.edit { prefs ->
+            prefs[Keys.AI_CHOSEN] = 1
             if (packageName.isNullOrBlank()) {
                 prefs.remove(Keys.AI_PKG)
                 prefs.remove(Keys.AI_LABEL)

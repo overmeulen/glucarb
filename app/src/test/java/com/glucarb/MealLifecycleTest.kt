@@ -179,4 +179,38 @@ class MealLifecycleTest {
         assertEquals(62.0, meal.totalCarbs, 1e-9)
         assertEquals("Pasta plate", meal.entries.first().label)
     }
+
+    @Test
+    fun `editing an item recomputes the open meal`() = runTest {
+        val item = bread()
+        meals.addCatalogEntry(item, input = 100.0, asPortions = false)
+        meals.refreshOpenMealFor(item.copy(carbsPer100 = 60.0, name = "Rye bread"))
+
+        val meal = requireNotNull(meals.observeCurrentMeal().first())
+        assertEquals(60.0, meal.totalCarbs, 1e-9)
+        assertEquals("Rye bread", meal.entries.first().label)
+    }
+
+    @Test
+    fun `a portioned entry keeps its portion count when the portion weight changes`() = runTest {
+        val item = bread()
+        meals.addCatalogEntry(item, input = 2.0, asPortions = true)
+        meals.refreshOpenMealFor(item.copy(portionSize = 50.0))
+
+        val entry = requireNotNull(meals.observeCurrentMeal().first()).entries.first()
+        assertEquals(2.0, requireNotNull(entry.portionsValue), 1e-9)
+        assertEquals(100.0, entry.quantity, 1e-9)
+        assertEquals(50.0, entry.carbs, 1e-9)
+    }
+
+    @Test
+    fun `closed meals keep the numbers they were logged with`() = runTest {
+        val item = bread()
+        meals.addCatalogEntry(item, input = 100.0, asPortions = false)
+        meals.closeCurrentMeal()
+        meals.refreshOpenMealFor(item.copy(carbsPer100 = 60.0))
+
+        val closed = meals.observeRecentMeals().first().first()
+        assertEquals(50.0, closed.totalCarbs, 1e-9)
+    }
 }

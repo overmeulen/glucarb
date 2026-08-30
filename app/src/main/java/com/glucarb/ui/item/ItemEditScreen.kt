@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyRow
@@ -46,11 +47,15 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
@@ -78,7 +83,30 @@ fun ItemEditScreen(
         ActivityResultContracts.PickVisualMedia()
     ) { uri -> if (uri != null) viewModel.pickPhoto(uri) }
 
+    // The capture target has to survive the process being killed while the camera is in the
+    // foreground, otherwise the returning result has nothing to point at.
+    var captureFile by rememberSaveable { mutableStateOf<String?>(null) }
+    val cameraLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.TakePicture()
+    ) { ok ->
+        val path = captureFile
+        captureFile = null
+        if (ok && path != null) viewModel.photoTaken(java.io.File(path))
+    }
+
+    val nameFocus = remember { FocusRequester() }
+    val keyboard = LocalSoftwareKeyboardController.current
+
     LaunchedEffect(state.saved) { if (state.saved) onDone() }
+
+    // A new item always starts with the name, so opening the keyboard there saves a tap.
+    // An edit does not: the user came here to change one specific field.
+    LaunchedEffect(Unit) {
+        if (state.id == 0L) {
+            nameFocus.requestFocus()
+            keyboard?.show()
+        }
+    }
 
     Scaffold(
         topBar = {
@@ -102,6 +130,9 @@ fun ItemEditScreen(
                 .fillMaxSize()
                 .padding(padding)
                 .verticalScroll(rememberScrollState())
+                // The window is drawn edge to edge, so the system never resizes it for the
+                // keyboard: without this the IME simply covers whichever field has focus.
+                .imePadding()
                 .padding(horizontal = 16.dp),
         ) {
             // The name comes first because the icon suggestions are derived from it: asking for
@@ -111,13 +142,21 @@ fun ItemEditScreen(
                 onValueChange = viewModel::setName,
                 label = { Text("Name") },
                 singleLine = true,
-                modifier = Modifier.fillMaxWidth().padding(top = 12.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 12.dp)
+                    .focusRequester(nameFocus),
             )
 
             IdentityPicker(
                 state = state,
                 onSelectIcon = viewModel::setEmoji,
                 onBrowse = { browsingIcons = true },
+                onTakePhoto = {
+                    val (file, uri) = viewModel.newCaptureTarget()
+                    captureFile = file.absolutePath
+                    cameraLauncher.launch(uri)
+                },
                 onPickPhoto = {
                     galleryLauncher.launch(
                         PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
@@ -239,6 +278,7 @@ private fun IdentityPicker(
     state: ItemEditState,
     onSelectIcon: (String) -> Unit,
     onBrowse: () -> Unit,
+    onTakePhoto: () -> Unit,
     onPickPhoto: () -> Unit,
     onClear: () -> Unit,
 ) {
@@ -282,8 +322,11 @@ private fun IdentityPicker(
                 }
             }
             Row(horizontalArrangement = Arrangement.spacedBy(2.dp)) {
-                CompactTextButton("All icons", onBrowse)
-                CompactTextButton("Photo", onPickPhoto)
+                CompactTextButton("Icons", onBrowse)
+                // Camera first: an item is almost always created with the food in front of you,
+                // so picking from the gallery is the exception, not the normal path.
+                CompactTextButton("Camera", onTakePhoto)
+                CompactTextButton("Gallery", onPickPhoto)
                 if (state.photoPath != null || state.emoji != null) {
                     CompactTextButton("Clear", onClear)
                 }

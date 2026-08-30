@@ -348,6 +348,14 @@ class HomeViewModel @Inject constructor(
      */
     fun startAiEstimate(sourceUri: android.net.Uri) {
         viewModelScope.launch {
+            // Separate messages on purpose: "the camera gave us nothing" and "we have bytes
+            // but cannot decode them" have completely different causes, and one error string
+            // covering both made the last bug much harder to place.
+            val scratch = java.io.File(sourceUri.path.orEmpty())
+            if (scratch.parentFile?.name == "share" && !photos.hasContent(scratch)) {
+                _events.send(HomeEvent.Message("The camera did not return a photo \u2014 try again"))
+                return@launch
+            }
             val stored = photos.importAdHocPhoto(sourceUri)
             if (stored == null) {
                 _events.send(HomeEvent.Message("Could not read that photo"))
@@ -356,6 +364,11 @@ class HomeViewModel @Inject constructor(
             val entryId = mealRepo.addPendingAiEntry(stored)
             _events.send(HomeEvent.ShareForAi(entryId, stored, settings.value.aiPrompt))
         }
+    }
+
+    /** Records the assistant chosen from the home screen on first use. */
+    fun setAiTarget(packageName: String?, label: String?) {
+        viewModelScope.launch { settingsRepo.setAiTarget(packageName, label) }
     }
 
     fun newCaptureTarget(): Pair<java.io.File, android.net.Uri> {

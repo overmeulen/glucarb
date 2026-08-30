@@ -28,7 +28,13 @@ class PhotoStore(private val context: Context) {
 
         /** Ad-hoc plate photos are shown larger in history, but still bounded. */
         const val ADHOC_MAX_EDGE = 900
+
+        /** Long enough to outlive any camera round trip, short enough to not accumulate. */
+        const val SHARE_MAX_AGE_MS = 6L * 60 * 60 * 1000
     }
+
+    /** True when a capture target actually received image bytes. */
+    fun hasContent(file: File): Boolean = file.exists() && file.length() > 0L
 
     private fun dir(name: String): File =
         File(context.filesDir, name).apply { if (!exists()) mkdirs() }
@@ -69,9 +75,20 @@ class PhotoStore(private val context: Context) {
         path?.let { runCatching { File(it).delete() } }
     }
 
-    /** Removes share scratch files; safe to call on every app start. */
-    fun clearShareCache() {
-        runCatching { shareDir.listFiles()?.forEach { it.delete() } }
+    /**
+     * Sweeps stale scratch files handed to the AI app.
+     *
+     * Deliberately age-based rather than "delete everything on start": launching the
+     * camera can get this process killed on a low-memory phone, and an unconditional
+     * sweep then deletes the photo the camera just wrote, before the result of the
+     * capture has even been delivered. That looked exactly like an unreadable photo.
+     */
+    fun clearShareCache(now: Long = System.currentTimeMillis(), maxAgeMillis: Long = SHARE_MAX_AGE_MS) {
+        runCatching {
+            shareDir.listFiles()?.forEach { file ->
+                if (now - file.lastModified() > maxAgeMillis) file.delete()
+            }
+        }
     }
 
     private fun decodeScaled(uri: Uri, maxEdge: Int): Bitmap? {

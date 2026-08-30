@@ -1,8 +1,5 @@
 package com.glucarb.ui.settings
 
-import android.content.Intent
-import android.content.pm.PackageManager
-import android.content.pm.ResolveInfo
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
@@ -50,8 +47,6 @@ import com.glucarb.data.repo.AppSettings
 import com.glucarb.data.repo.BackupManager
 import kotlin.system.exitProcess
 
-private data class ShareTarget(val packageName: String, val label: String)
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsScreen(
@@ -86,11 +81,7 @@ fun SettingsScreen(
         mutableStateOf(settings.idleTimeoutMinutes.toString())
     }
     var showPicker by remember { mutableStateOf(false) }
-    var targets by remember { mutableStateOf<List<ShareTarget>>(emptyList()) }
-
-    LaunchedEffect(showPicker) {
-        if (showPicker) targets = queryShareTargets(context.packageManager)
-    }
+    val targets = rememberShareTargets()
 
     Scaffold(
         snackbarHost = { SnackbarHost(snackbar) },
@@ -126,12 +117,14 @@ fun SettingsScreen(
                 Column(Modifier.weight(1f)) {
                     Text("Assistant app")
                     Text(
-                        settings.aiTargetLabel ?: "Ask every time (system share sheet)",
+                        settings.aiTargetLabel
+                            ?: if (settings.aiTargetChosen) "Ask every time (system share sheet)"
+                            else "Not chosen yet",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
-                Text("Change", color = MaterialTheme.colorScheme.primary)
+                Text(if (settings.aiTargetChosen) "Change" else "Choose", color = MaterialTheme.colorScheme.primary)
             }
 
             OutlinedTextField(
@@ -221,45 +214,13 @@ fun SettingsScreen(
     }
 
     if (showPicker) {
-        AlertDialog(
-            onDismissRequest = { showPicker = false },
-            title = { Text("Send photos to") },
-            text = {
-                Column(Modifier.verticalScroll(rememberScrollState())) {
-                    Text(
-                        "Ask every time",
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clickable {
-                                viewModel.setAiTarget(null, null)
-                                showPicker = false
-                            }
-                            .padding(vertical = 12.dp),
-                    )
-                    targets.forEach { target ->
-                        Text(
-                            target.label,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clickable {
-                                    viewModel.setAiTarget(target.packageName, target.label)
-                                    showPicker = false
-                                }
-                                .padding(vertical = 12.dp),
-                        )
-                    }
-                    if (targets.isEmpty()) {
-                        Text(
-                            "No app on this device accepts shared images.",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                    }
-                }
+        AssistantPickerDialog(
+            targets = targets,
+            onPick = { pkg, label ->
+                viewModel.setAiTarget(pkg, label)
+                showPicker = false
             },
-            confirmButton = {
-                TextButton(onClick = { showPicker = false }) { Text("Cancel") }
-            },
+            onDismiss = { showPicker = false },
         )
     }
 }
@@ -283,14 +244,4 @@ private fun android.content.Context.findActivity(): android.app.Activity? {
         current = current.baseContext
     }
     return null
-}
-
-private fun queryShareTargets(pm: PackageManager): List<ShareTarget> {    val intent = Intent(Intent.ACTION_SEND).apply { type = "image/jpeg" }
-    val flags = PackageManager.MATCH_DEFAULT_ONLY
-    @Suppress("DEPRECATION")
-    val resolved: List<ResolveInfo> = pm.queryIntentActivities(intent, flags)
-    return resolved
-        .map { ShareTarget(it.activityInfo.packageName, it.loadLabel(pm).toString()) }
-        .distinctBy { it.packageName }
-        .sortedBy { it.label.lowercase() }
 }

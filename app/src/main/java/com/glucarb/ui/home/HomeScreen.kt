@@ -72,6 +72,8 @@ import com.glucarb.data.entity.MealEntry
 import com.glucarb.domain.CarbMath
 import com.glucarb.ui.common.FoodRow
 import com.glucarb.ui.common.FoodTile
+import com.glucarb.ui.settings.AssistantPickerDialog
+import com.glucarb.ui.settings.rememberShareTargets
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -90,17 +92,32 @@ fun HomeScreen(
     val context = LocalContext.current
 
     var captureUri by rememberSaveable { mutableStateOf<String?>(null) }
+    var choosingAssistant by remember { mutableStateOf(false) }
+    val shareTargets = rememberShareTargets()
 
     val cameraLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.TakePicture()
     ) { ok ->
         val uri = captureUri
+        captureUri = null
         if (ok && uri != null) viewModel.startAiEstimate(Uri.parse(uri))
     }
 
     val galleryLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.PickVisualMedia()
     ) { uri -> if (uri != null) viewModel.startAiEstimate(uri) }
+
+    val launchCapture: () -> Unit = {
+        val (file, uri) = viewModel.newCaptureTarget()
+        captureUri = uri.toString()
+        runCatching { cameraLauncher.launch(uri) }.onFailure {
+            file.delete()
+            captureUri = null
+            galleryLauncher.launch(
+                PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
+            )
+        }
+    }
 
     androidx.lifecycle.compose.LifecycleResumeEffect(Unit) {
         viewModel.onResume()
@@ -159,13 +176,12 @@ fun HomeScreen(
                 // solid mass next to the hairline "+", and the weights clash.
                 FloatingActionButton(
                     onClick = {
-                        val (file, uri) = viewModel.newCaptureTarget()
-                        captureUri = uri.toString()
-                        runCatching { cameraLauncher.launch(uri) }.onFailure {
-                            file.delete()
-                            galleryLauncher.launch(
-                                PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
-                            )
+                        // Nothing can be sent anywhere until the user has said where; asking
+                        // here rather than sending them off to Settings keeps the flow intact.
+                        if (!settings.aiTargetChosen) {
+                            choosingAssistant = true
+                        } else {
+                            launchCapture()
                         }
                     },
                     containerColor = MaterialTheme.colorScheme.surfaceVariant,
@@ -261,6 +277,20 @@ fun HomeScreen(
             onCommit = viewModel::commitAdHoc,
             onCancel = { viewModel.cancelPendingAi(s.entryId) },
             onDismiss = viewModel::dismissAdHocSheet,
+        )
+    }
+
+    if (choosingAssistant) {
+        AssistantPickerDialog(
+            targets = shareTargets,
+            title = "Which app should estimate the carbs?",
+            subtitle = "Glucarb sends the photo and your prompt to it. You can change this later in Settings.",
+            onPick = { pkg, label ->
+                viewModel.setAiTarget(pkg, label)
+                choosingAssistant = false
+                launchCapture()
+            },
+            onDismiss = { choosingAssistant = false },
         )
     }
 }

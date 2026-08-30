@@ -364,20 +364,23 @@ class HomeViewModel @Inject constructor(
     fun startAiEstimate(capture: java.io.File) {
         viewModelScope.launch {
             if (!photos.hasContent(capture)) {
-                _events.send(HomeEvent.Message("The camera did not save a photo \u2014 try again"))
+                _events.send(HomeEvent.Message("The camera saved nothing to ${capture.name}"))
                 return@launch
             }
-            val stored = photos.importAdHocPhoto(capture)
-            if (stored != null) photos.delete(capture.absolutePath)
-            finishAiEstimate(stored)
+            val result = photos.importAdHocPhoto(capture)
+            if (result is com.glucarb.data.repo.PhotoImport.Stored) {
+                photos.delete(capture.absolutePath)
+            }
+            finishAiEstimate(result)
         }
     }
 
-    private suspend fun finishAiEstimate(stored: String?) {
-        if (stored == null) {
-            _events.send(HomeEvent.Message("That photo could not be read"))
+    private suspend fun finishAiEstimate(result: com.glucarb.data.repo.PhotoImport) {
+        if (result is com.glucarb.data.repo.PhotoImport.Failed) {
+            _events.send(HomeEvent.Message("Photo failed \u2014 ${result.reason}"))
             return
         }
+        val stored = result.pathOrNull ?: return
         val entryId = mealRepo.addPendingAiEntry(stored)
         _events.send(HomeEvent.ShareForAi(entryId, stored, settings.value.aiPrompt))
     }

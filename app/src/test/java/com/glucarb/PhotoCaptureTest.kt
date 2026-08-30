@@ -3,6 +3,7 @@ package com.glucarb
 import android.graphics.Bitmap
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.glucarb.data.repo.PhotoImport
 import com.glucarb.data.repo.PhotoStore
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
@@ -12,6 +13,7 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.annotation.Config
+import org.robolectric.annotation.GraphicsMode
 import java.io.File
 import java.io.FileOutputStream
 
@@ -24,6 +26,10 @@ import java.io.FileOutputStream
  */
 @RunWith(AndroidJUnit4::class)
 @Config(sdk = [34], application = android.app.Application::class)
+// Real graphics, not Robolectric's shadow. The shadow ignores inJustDecodeBounds and hands
+// back a bitmap regardless, which is exactly how a decode path that rejected every photo
+// sat behind a green test suite. These tests are worthless in LEGACY mode.
+@GraphicsMode(GraphicsMode.Mode.NATIVE)
 class PhotoCaptureTest {
 
     private val context = ApplicationProvider.getApplicationContext<android.content.Context>()
@@ -39,7 +45,7 @@ class PhotoCaptureTest {
         val capture = photos.newShareFile()
         writeJpeg(capture)
 
-        val stored = photos.importCatalogPhoto(capture)
+        val stored = photos.importCatalogPhoto(capture).pathOrNull
 
         assertNotNull("a readable capture must import", stored)
         assertTrue(File(requireNotNull(stored)).exists())
@@ -54,11 +60,45 @@ class PhotoCaptureTest {
     }
 
     @Test
+    fun `the bounds pass does not abort the import`() = runTest {
+        // BitmapFactory.decodeStream returns null by design when inJustDecodeBounds is set.
+        // Treating that null as failure rejected every photo, and no assertion on the result
+        // could see it here because Robolectric's shadow hands back a bitmap either way.
+        // Counting opens is shadow-independent: the broken version stopped after the first.
+        val capture = photos.newShareFile()
+        writeJpeg(capture)
+        var opens = 0
+
+        val result = photos.importScaled(
+            open = { opens++; capture.inputStream() },
+            target = photos.catalogDir,
+            maxEdge = PhotoStore.CATALOG_MAX_EDGE,
+            origin = "test",
+        )
+
+        assertTrue("import must reach the decode pass, opened $opens time(s)", opens >= 2)
+        assertTrue("a real JPEG must import, got $result", result is PhotoImport.Stored)
+    }
+
+    @Test
+    fun `a failure explains itself`() = runTest {
+        val result = photos.importScaled(
+            open = { null },
+            target = photos.catalogDir,
+            maxEdge = PhotoStore.CATALOG_MAX_EDGE,
+            origin = "test",
+        )
+
+        val reason = (result as PhotoImport.Failed).reason
+        assertTrue("the reason must name the problem, got: $reason", reason.contains("open"))
+    }
+
+    @Test
     fun `an imported photo is stored in the catalog directory, not left in share`() = runTest {
         val capture = photos.newShareFile()
         writeJpeg(capture)
 
-        val stored = requireNotNull(photos.importCatalogPhoto(capture))
+        val stored = requireNotNull(photos.importCatalogPhoto(capture).pathOrNull)
 
         assertEquals(photos.catalogDir, File(stored).parentFile)
     }

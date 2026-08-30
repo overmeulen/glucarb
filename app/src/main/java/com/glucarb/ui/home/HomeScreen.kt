@@ -147,7 +147,8 @@ fun HomeScreen(
                     if (result == SnackbarResult.ActionPerformed) viewModel.undoDelete(event.entry)
                 }
 
-                is HomeEvent.Message -> snackbar.showSnackbar(event.text)
+                is HomeEvent.Message ->
+                    snackbar.showSnackbar(event.text, duration = SnackbarDuration.Long)
 
                 is HomeEvent.ShareForAi -> {
                     val sent = shareToAi(

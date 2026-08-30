@@ -15,6 +15,19 @@ import java.io.InputStream
 import java.util.UUID
 
 /**
+ * Outcome of importing a photo.
+ *
+ * Carries the reason on failure. An import that can only answer "no" gives the user a
+ * dead button and gives us nothing to work with.
+ */
+sealed interface PhotoImport {
+    data class Stored(val path: String) : PhotoImport
+    data class Failed(val reason: String) : PhotoImport
+
+    val pathOrNull: String? get() = (this as? Stored)?.path
+}
+
+/**
  * Stores photos inside app-internal storage.
  *
  *  - `files/photos`  catalog thumbnails, downscaled so Auto Backup's 25 MB quota holds;
@@ -51,13 +64,13 @@ class PhotoStore(private val context: Context) {
 
     fun fileFor(path: String?): File? = path?.let { File(it) }?.takeIf { it.exists() }
 
-    /** Copies [source] into the catalog directory, downscaled. Returns the stored path. */
-    suspend fun importCatalogPhoto(source: Uri): String? =
-        importScaled({ context.contentResolver.openInputStream(source) }, catalogDir, CATALOG_MAX_EDGE)
+    /** Copies [source] into the catalog directory, downscaled. */
+    suspend fun importCatalogPhoto(source: Uri): PhotoImport =
+        importScaled({ context.contentResolver.openInputStream(source) }, catalogDir, CATALOG_MAX_EDGE, "$source")
 
-    /** Copies [source] into the ad-hoc directory, downscaled. Returns the stored path. */
-    suspend fun importAdHocPhoto(source: Uri): String? =
-        importScaled({ context.contentResolver.openInputStream(source) }, adhocDir, ADHOC_MAX_EDGE)
+    /** Copies [source] into the ad-hoc directory, downscaled. */
+    suspend fun importAdHocPhoto(source: Uri): PhotoImport =
+        importScaled({ context.contentResolver.openInputStream(source) }, adhocDir, ADHOC_MAX_EDGE, "$source")
 
     /**
      * Imports a file this app owns, reading it directly.
@@ -66,27 +79,41 @@ class PhotoStore(private val context: Context) {
      * FileProvider and the ContentResolver to read it again adds a permission and
      * resolution path that can fail for reasons that have nothing to do with the image.
      */
-    suspend fun importCatalogPhoto(source: File): String? =
-        importScaled({ source.inputStream() }, catalogDir, CATALOG_MAX_EDGE)
+    suspend fun importCatalogPhoto(source: File): PhotoImport =
+        importScaled({ source.inputStream() }, catalogDir, CATALOG_MAX_EDGE, describe(source))
 
-    suspend fun importAdHocPhoto(source: File): String? =
-        importScaled({ source.inputStream() }, adhocDir, ADHOC_MAX_EDGE)
+    suspend fun importAdHocPhoto(source: File): PhotoImport =
+        importScaled({ source.inputStream() }, adhocDir, ADHOC_MAX_EDGE, describe(source))
 
-    private suspend fun importScaled(
+    private fun describe(file: File): String =
+        "${file.name}, ${file.length()} bytes, readable=${file.canRead()}"
+
+    /**
+     * Internal rather than private so a test can count stream opens: the bug this replaced
+     * aborted after the *first* open, which no assertion about the returned bitmap could
+     * catch under Robolectric's BitmapFactory shadow.
+     */
+    internal suspend fun importScaled(
         open: () -> InputStream?,
         target: File,
         maxEdge: Int,
-    ): String? =
+        origin: String,
+    ): PhotoImport =
         withContext(Dispatchers.IO) {
-            runCatching {
-                val bitmap = decodeScaled(open, maxEdge) ?: return@runCatching null
+            try {
+                val bitmap = decodeScaled(open, maxEdge)
+                    ?: return@withContext PhotoImport.Failed("not a decodable image ($origin)")
                 val out = File(target, "img-${UUID.randomUUID()}.jpg")
                 FileOutputStream(out).use { stream ->
                     bitmap.compress(Bitmap.CompressFormat.JPEG, 85, stream)
                 }
                 bitmap.recycle()
-                out.absolutePath
-            }.getOrNull()
+                PhotoImport.Stored(out.absolutePath)
+            } catch (e: Throwable) {
+                // Reported rather than swallowed: two rounds of guessing at an invisible
+                // failure cost more than showing the user an ugly but truthful message.
+                PhotoImport.Failed("${e.javaClass.simpleName}: ${e.message} ($origin)")
+            }
         }
 
     fun delete(path: String?) {
@@ -111,20 +138,25 @@ class PhotoStore(private val context: Context) {
 
     private fun decodeScaled(open: () -> InputStream?, maxEdge: Int): Bitmap? {
         val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
-        open()?.use {
+        // decodeStream returns null *by design* when inJustDecodeBounds is set - it only
+        // fills in the dimensions. So the null check has to be on the stream; testing the
+        // decode result here rejects every photo that reads perfectly well.
+        (open() ?: error("could not open the photo for reading")).use {
             BitmapFactory.decodeStream(it, null, bounds)
-        } ?: return null
+        }
 
         val longest = maxOf(bounds.outWidth, bounds.outHeight)
-        if (longest <= 0) return null
+        if (longest <= 0) {
+            error("no image found: ${bounds.outWidth}x${bounds.outHeight}, type=${bounds.outMimeType}")
+        }
 
         var sample = 1
         while (longest / (sample * 2) >= maxEdge) sample *= 2
 
         val opts = BitmapFactory.Options().apply { inSampleSize = sample }
-        val decoded = open()?.use {
+        val decoded = (open() ?: error("could not reopen the photo")).use {
             BitmapFactory.decodeStream(it, null, opts)
-        } ?: return null
+        } ?: error("decode returned nothing at sample=$sample for ${bounds.outWidth}x${bounds.outHeight}")
 
         val rotated = applyExifRotation(open, decoded)
         val edge = maxOf(rotated.width, rotated.height)

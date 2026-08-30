@@ -7,6 +7,7 @@ import androidx.lifecycle.viewModelScope
 import com.glucarb.data.MeasurementUnit
 import com.glucarb.data.entity.FoodItem
 import com.glucarb.data.repo.FoodRepository
+import com.glucarb.data.repo.PhotoImport
 import com.glucarb.data.repo.PhotoStore
 import com.glucarb.domain.CarbMath
 import com.glucarb.domain.EmojiSuggester
@@ -132,14 +133,10 @@ class ItemEditViewModel @Inject constructor(
     fun pickPhoto(uri: Uri) {
         viewModelScope.launch {
             loadJob.join()
-            val path = photos.importCatalogPhoto(uri)
-            if (path == null) {
-                _errors.send("That photo could not be read")
-                return@launch
+            when (val result = photos.importCatalogPhoto(uri)) {
+                is PhotoImport.Failed -> _errors.send("Photo failed \u2014 ${result.reason}")
+                is PhotoImport.Stored -> applyPhoto(result.path)
             }
-            val current = _state.value
-            current.discardUnsavedPhoto()
-            _state.value = current.copy(photoPath = path, emoji = null, emojiTouched = true)
         }
     }
 
@@ -160,19 +157,23 @@ class ItemEditViewModel @Inject constructor(
         viewModelScope.launch {
             loadJob.join()
             if (!photos.hasContent(scratch)) {
-                _errors.send("The camera did not save a photo \u2014 try again")
+                _errors.send("The camera saved nothing to ${scratch.name}")
                 return@launch
             }
-            val path = photos.importCatalogPhoto(scratch)
-            if (path == null) {
-                _errors.send("That photo could not be read")
-                return@launch
+            when (val result = photos.importCatalogPhoto(scratch)) {
+                is PhotoImport.Failed -> _errors.send("Photo failed \u2014 ${result.reason}")
+                is PhotoImport.Stored -> {
+                    photos.delete(scratch.absolutePath)
+                    applyPhoto(result.path)
+                }
             }
-            photos.delete(scratch.absolutePath)
-            val current = _state.value
-            current.discardUnsavedPhoto()
-            _state.value = current.copy(photoPath = path, emoji = null, emojiTouched = true)
         }
+    }
+
+    private fun applyPhoto(path: String) {
+        val current = _state.value
+        current.discardUnsavedPhoto()
+        _state.value = current.copy(photoPath = path, emoji = null, emojiTouched = true)
     }
 
     /** Removing the photo hands the item back to the name-based suggestion. */

@@ -1,7 +1,6 @@
 package com.glucarb.ui.item
 
 import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -82,8 +81,12 @@ fun ItemEditScreen(
     val state by viewModel.state.collectAsStateWithLifecycle()
     var browsingIcons by remember { mutableStateOf(false) }
 
+    // GetContent, not PickVisualMedia: the system photo picker only lists what MediaStore
+    // has indexed as user media, so a shot taken in another camera app can simply be absent.
+    // This routes through the chooser to Photos, the Gallery or Files - whatever the user
+    // actually thinks of as their gallery - which can see everything.
     val galleryLauncher = rememberLauncherForActivityResult(
-        ActivityResultContracts.PickVisualMedia()
+        ActivityResultContracts.GetContent()
     ) { uri -> if (uri != null) viewModel.pickPhoto(uri) }
 
     // The capture target has to survive the process being killed while the camera is in the
@@ -140,10 +143,12 @@ fun ItemEditScreen(
             Modifier
                 .fillMaxSize()
                 .padding(padding)
-                .verticalScroll(rememberScrollState())
-                // The window is drawn edge to edge, so the system never resizes it for the
-                // keyboard: without this the IME simply covers whichever field has focus.
+                // Before verticalScroll, not after: this has to shrink the scroll *viewport*,
+                // otherwise the padding just scrolls along with the content and the viewport
+                // still extends behind the keyboard. With the viewport correct, Compose's own
+                // bring-into-view scrolls the focused field up on its own.
                 .imePadding()
+                .verticalScroll(rememberScrollState())
                 .padding(horizontal = 16.dp),
         ) {
             // The name comes first because the icon suggestions are derived from it: asking for
@@ -168,11 +173,7 @@ fun ItemEditScreen(
                     captureFile = file.absolutePath
                     cameraLauncher.launch(uri)
                 },
-                onPickPhoto = {
-                    galleryLauncher.launch(
-                        PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
-                    )
-                },
+                onPickPhoto = { galleryLauncher.launch("image/*") },
                 onClear = {
                     if (state.photoPath != null) viewModel.clearPhoto() else viewModel.setEmoji(null)
                 },

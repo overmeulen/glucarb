@@ -210,7 +210,13 @@ class HomeViewModel @Inject constructor(
             }
         }
         val fallback = if (asPortions) listOf(1.0, 2.0, 3.0, 4.0) else defaultChips(item)
-        return (values + fallback).distinctBy { CarbMath.format(it, 2) }.take(4).sorted()
+        // Taken before sorting, so these are the two *most used* values, then ordered for
+        // the eye. More than two turned the row into something to read rather than hit.
+        return (values + fallback).distinctBy { CarbMath.format(it, 2) }.take(CHIP_COUNT).sorted()
+    }
+
+    private companion object {
+        const val CHIP_COUNT = 2
     }
 
     private fun defaultChips(item: FoodItem): List<Double> =
@@ -397,11 +403,25 @@ class HomeViewModel @Inject constructor(
 
     fun shareUriFor(path: String): android.net.Uri = photos.uriFor(java.io.File(path))
 
+    /**
+     * The prompt we put on the clipboard for the assistant app.
+     *
+     * Kept so it is never mistaken for the assistant's answer on the way back: a
+     * user-written prompt can easily contain a number, and reading that back as a carb
+     * count would be worse than reading nothing.
+     */
+    private var promptOnClipboard: String? = null
+
+    fun notePromptOnClipboard(prompt: String) {
+        promptOnClipboard = prompt
+    }
+
     /** Called on resume: tries to fill the oldest pending AI row from the clipboard. */
     fun tryResolvePendingAi(clipboardText: String?) {
         val pending = uiState.value.meal?.entries?.firstOrNull { it.aiPending } ?: return
         if (_adHocSheet.value?.entryId == pending.id) return
-        val parsed = CarbTextParser.parse(clipboardText)
+        val answer = clipboardText?.takeIf { it.trim() != promptOnClipboard?.trim() }
+        val parsed = CarbTextParser.parse(answer)
         _adHocSheet.value = AdHocSheetState(
             entryId = pending.id,
             label = pending.label,

@@ -4,7 +4,6 @@ import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -103,8 +102,10 @@ fun HomeScreen(
         if (ok && path != null) viewModel.startAiEstimate(java.io.File(path))
     }
 
+    // See ItemEditScreen: GetContent reaches the user's real gallery, the system photo
+    // picker only shows MediaStore-indexed media.
     val galleryLauncher = rememberLauncherForActivityResult(
-        ActivityResultContracts.PickVisualMedia()
+        ActivityResultContracts.GetContent()
     ) { uri -> if (uri != null) viewModel.startAiEstimate(uri) }
 
     val launchCapture: () -> Unit = {
@@ -114,9 +115,7 @@ fun HomeScreen(
         runCatching { cameraLauncher.launch(uri) }.onFailure {
             file.delete()
             captureUri = null
-            galleryLauncher.launch(
-                PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
-            )
+            galleryLauncher.launch("image/*")
         }
     }
 
@@ -151,6 +150,11 @@ fun HomeScreen(
                     snackbar.showSnackbar(event.text, duration = SnackbarDuration.Long)
 
                 is HomeEvent.ShareForAi -> {
+                    // Most assistants drop EXTRA_TEXT when an image is attached, so the
+                    // prompt also goes on the clipboard: one long-press paste in the other
+                    // app, rather than typing it out every meal.
+                    copyToClipboard(context, event.prompt)
+                    viewModel.notePromptOnClipboard(event.prompt)
                     val sent = shareToAi(
                         context = context,
                         uri = viewModel.shareUriFor(event.photoPath),
@@ -503,6 +507,14 @@ private fun readClipboard(context: Context): String? {
     return clip.getItemAt(0).coerceToText(context)?.toString()
 }
 
+private fun copyToClipboard(context: Context, text: String) {
+    val manager = context.getSystemService(Context.CLIPBOARD_SERVICE) as? android.content.ClipboardManager
+        ?: return
+    runCatching {
+        manager.setPrimaryClip(android.content.ClipData.newPlainText("Glucarb prompt", text))
+    }
+}
+
 /**
  * Fires the share intent. Returns false when nothing on the device can handle it, so the
  * caller can tell the user instead of failing silently.
@@ -518,6 +530,11 @@ private fun shareToAi(
         putExtra(Intent.EXTRA_STREAM, uri)
         putExtra(Intent.EXTRA_TEXT, prompt)
         putExtra(Intent.EXTRA_SUBJECT, prompt)
+        // Explicit clipData is what actually carries the read grant to the target app for
+        // ACTION_SEND; relying on EXTRA_STREAM plus the flag alone is not enough on every
+        // OEM. Whether the target honours EXTRA_TEXT is its own business, hence the
+        // clipboard copy made before this is called.
+        clipData = android.content.ClipData.newUri(context.contentResolver, "photo", uri)
         addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
     }
     if (!targetPackage.isNullOrBlank()) {

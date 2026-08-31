@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -100,6 +101,9 @@ fun SettingsScreen(
             Modifier
                 .fillMaxSize()
                 .padding(padding)
+                // Shrinks the scroll viewport so the prompt and timeout fields are not left
+                // behind the keyboard. Must come before verticalScroll.
+                .imePadding()
                 .verticalScroll(rememberScrollState())
                 .padding(horizontal = 16.dp),
         ) {
@@ -146,6 +150,14 @@ fun SettingsScreen(
                     Text("Reset to default")
                 }
             }
+            Text(
+                "The prompt is also copied to the clipboard when you share a photo, " +
+                    "because most assistants ignore text sent alongside an image \u2014 " +
+                    "paste it there if it does not appear.",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(top = 6.dp),
+            )
 
             SectionTitle("Meals")
 

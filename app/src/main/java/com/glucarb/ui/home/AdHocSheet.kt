@@ -8,13 +8,12 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
@@ -104,8 +103,18 @@ fun AdHocSheet(
                 ) {
                     Text("Confirm & add", fontWeight = FontWeight.Bold)
                 }
-                OutlinedButton(onClick = onCancel, modifier = Modifier.width(80.dp)) {
-                    Text("Discard")
+                // Same fix as the entry sheet's Delete: a fixed narrow button wrapped the
+                // label onto two lines. Sharing Confirm's shape and taking the error colour
+                // reads as destructive without being cramped.
+                Button(
+                    onClick = onCancel,
+                    modifier = Modifier.weight(1f),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.error,
+                        contentColor = MaterialTheme.colorScheme.onError,
+                    ),
+                ) {
+                    Text("Discard", fontWeight = FontWeight.Bold)
                 }
             }
 

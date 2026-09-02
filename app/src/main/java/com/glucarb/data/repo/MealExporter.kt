@@ -8,7 +8,7 @@ import kotlinx.coroutines.withContext
 import java.io.File
 
 /** What an export produced, so the UI can report it honestly. */
-data class ExportResult(val rows: Int, val meals: Int)
+data class ExportResult(val meals: Int)
 
 /**
  * Writes logged meals out as CSV.
@@ -54,7 +54,6 @@ class MealExporter(
 
     private suspend fun render(from: Long): Pair<String, ExportResult> {
         val rows = meals.mealsSince(from)
-        val result = ExportResult(rows = MealCsvExport.rowCount(rows), meals = rows.size)
-        return MealCsvExport.build(rows) to result
+        return MealCsvExport.build(rows) to ExportResult(MealCsvExport.rowCount(rows))
     }
 }

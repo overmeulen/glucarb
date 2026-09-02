@@ -5,6 +5,7 @@ import com.glucarb.data.dao.MealWithEntries
 import com.glucarb.data.entity.Meal
 import com.glucarb.data.entity.MealEntry
 import com.glucarb.domain.MealCsvExport
+import com.glucarb.ui.history.ExportRange
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -12,10 +13,12 @@ import java.time.ZoneId
 
 class MealCsvExportTest {
 
-    private val zone = ZoneId.of("Europe/Paris")
+    private val paris = ZoneId.of("Europe/Paris")
 
     /** 2026-09-02 12:30 in Paris (UTC+2). */
     private val noon = 1_788_345_000_000L
+
+    private val hour = 3_600_000L
 
     private fun meal(
         id: Long,
@@ -30,175 +33,142 @@ class MealCsvExportTest {
     private fun entry(
         id: Long,
         mealId: Long,
-        label: String,
         carbs: Double,
-        quantity: Double = 100.0,
-        createdAt: Long = noon,
-        foodItemId: Long? = 7L,
-        enteredAsPortions: Boolean = false,
-        portionsValue: Double? = null,
         aiPending: Boolean = false,
     ) = MealEntry(
         id = id,
         mealId = mealId,
-        foodItemId = foodItemId,
-        label = label,
-        quantity = quantity,
+        foodItemId = 7L,
+        label = "Food $id",
+        quantity = 100.0,
         unit = MeasurementUnit.G,
-        enteredAsPortions = enteredAsPortions,
-        portionsValue = portionsValue,
         carbs = carbs,
         aiPending = aiPending,
-        createdAt = createdAt,
+        createdAt = mealId,
     )
 
     private fun lines(csv: String) = csv.trim().lines()
 
     @Test
-    fun `header names every column`() {
-        val csv = MealCsvExport.build(emptyList(), zone)
-        assertEquals(
-            "meal_id,meal_started,meal_ended,logged_at,food,amount,unit,portions,carbs_g,source",
-            csv.trim(),
-        )
+    fun `the file is two columns and nothing else`() {
+        assertEquals("meal_time,carbs_g", MealCsvExport.build(emptyList(), paris).trim())
     }
 
     @Test
-    fun `a catalog entry becomes one row with local time`() {
+    fun `one row per meal, carrying the local time and the total`() {
         val csv = MealCsvExport.build(
             listOf(
                 meal(
-                    id = 3,
-                    startedAt = noon,
-                    closedAt = noon + 600_000,
-                    entries = listOf(entry(1, 3, "Pasta", carbs = 48.0, quantity = 150.0)),
+                    3, noon, noon + 600_000,
+                    listOf(entry(1, 3, 48.0), entry(2, 3, 21.0)),
                 ),
             ),
-            zone,
+            paris,
         )
-        assertEquals(
-            "3,2026-09-02T12:30:00+02:00,2026-09-02T12:40:00+02:00," +
-                "2026-09-02T12:30:00+02:00,Pasta,150,g,,48,catalog",
-            lines(csv)[1],
-        )
+        assertEquals(2, lines(csv).size)
+        assertEquals("2026-09-02T12:30:00+02:00,69", lines(csv)[1])
     }
 
     @Test
-    fun `an open meal leaves meal_ended empty rather than guessing`() {
+    fun `an open meal is exported like any other`() {
         val csv = MealCsvExport.build(
-            listOf(meal(1, noon, null, listOf(entry(1, 1, "Apple", 9.0)))),
-            zone,
+            listOf(meal(1, noon, closedAt = null, entries = listOf(entry(1, 1, 30.0)))),
+            paris,
         )
-        val cells = lines(csv)[1].split(",")
-        assertEquals("", cells[2])
+        assertEquals("2026-09-02T12:30:00+02:00,30", lines(csv)[1])
     }
 
     @Test
-    fun `portions are reported as portions, and only when entered that way`() {
+    fun `unanswered AI estimates do not count toward the total`() {
         val csv = MealCsvExport.build(
             listOf(
                 meal(
                     1, noon, null,
-                    listOf(
-                        entry(
-                            1, 1, "Bread", carbs = 21.0, quantity = 60.0,
-                            enteredAsPortions = true, portionsValue = 2.0,
-                        ),
-                        // Same item, typed in grams: the stored portionsValue must not leak
-                        // into the file as if the user had counted slices.
-                        entry(
-                            2, 1, "Bread", carbs = 10.5, quantity = 30.0, createdAt = noon + 1000,
-                            enteredAsPortions = false, portionsValue = 1.0,
-                        ),
-                    ),
+                    listOf(entry(1, 1, 30.0), entry(2, 1, 999.0, aiPending = true)),
                 ),
             ),
-            zone,
+            paris,
         )
-        assertEquals("2", lines(csv)[1].split(",")[7])
-        assertEquals("", lines(csv)[2].split(",")[7])
+        assertEquals("2026-09-02T12:30:00+02:00,30", lines(csv)[1])
     }
 
     @Test
-    fun `an ad-hoc estimate carries no amount and is marked as such`() {
-        val csv = MealCsvExport.build(
-            listOf(
-                meal(1, noon, null, listOf(entry(1, 1, "Plate", 62.0, foodItemId = null))),
-            ),
-            zone,
-        )
-        val cells = lines(csv)[1].split(",")
-        assertEquals("", cells[5])
-        assertEquals("", cells[6])
-        assertEquals("62", cells[8])
-        assertEquals("ai_estimate", cells[9])
-    }
-
-    @Test
-    fun `unanswered AI estimates are omitted, not exported as zero`() {
+    fun `a meal that is only an unanswered estimate is skipped, not written as zero`() {
         val meals = listOf(
-            meal(
-                1, noon, null,
-                listOf(
-                    entry(1, 1, "Rice", 30.0),
-                    entry(2, 1, "Plate", 0.0, foodItemId = null, aiPending = true),
-                ),
-            ),
+            meal(1, noon, null, listOf(entry(1, 1, 0.0, aiPending = true))),
+            meal(2, noon + hour, null, listOf(entry(2, 2, 12.0))),
         )
-        val csv = MealCsvExport.build(meals, zone)
+        val csv = MealCsvExport.build(meals, paris)
         assertEquals(2, lines(csv).size)
-        assertTrue("Plate" !in csv)
+        assertTrue("13:30" in csv)
         assertEquals(1, MealCsvExport.rowCount(meals))
     }
 
     @Test
-    fun `names containing a comma or a quote stay parseable`() {
+    fun `rows run oldest first`() {
         val csv = MealCsvExport.build(
             listOf(
-                meal(
-                    1, noon, null,
-                    listOf(
-                        entry(1, 1, "Rice, basmati", 30.0),
-                        entry(2, 1, "Ben\"s cake", 40.0, createdAt = noon + 1000),
-                    ),
-                ),
+                meal(2, noon + hour, null, listOf(entry(2, 2, 5.0))),
+                meal(1, noon, null, listOf(entry(1, 1, 1.0))),
             ),
-            zone,
+            paris,
         )
-        assertTrue("\"Rice, basmati\"" in csv)
-        assertTrue("\"Ben\"\"s cake\"" in csv)
+        assertEquals(listOf("1", "5"), lines(csv).drop(1).map { it.split(",")[1] })
     }
 
     @Test
-    fun `rows run oldest first across and within meals`() {
+    fun `carbs keep a decimal so summed meals do not drift`() {
         val csv = MealCsvExport.build(
-            listOf(
-                meal(2, noon + 3_600_000, null, listOf(entry(3, 2, "Later", 5.0, createdAt = noon + 3_600_000))),
-                meal(
-                    1, noon, null,
-                    listOf(
-                        entry(2, 1, "Second", 2.0, createdAt = noon + 60_000),
-                        entry(1, 1, "First", 1.0, createdAt = noon),
-                    ),
-                ),
-            ),
-            zone,
+            listOf(meal(1, noon, null, listOf(entry(1, 1, 10.4)))),
+            paris,
         )
-        val foods = lines(csv).drop(1).map { it.split(",")[4] }
-        assertEquals(listOf("First", "Second", "Later"), foods)
-    }
-
-    @Test
-    fun `carbs keep a decimal so summed rows match the meal total`() {
-        val csv = MealCsvExport.build(
-            listOf(meal(1, noon, null, listOf(entry(1, 1, "Milk", 10.4)))),
-            zone,
-        )
-        assertEquals("10.4", lines(csv)[1].split(",")[8])
+        assertEquals("10.4", lines(csv)[1].split(",")[1])
     }
 
     @Test
     fun `the file name states the start date`() {
-        assertEquals("Glucarb-meals-from-2026-09-02.csv", MealCsvExport.fileName(noon, zone))
+        assertEquals("Glucarb-meals-from-2026-09-02.csv", MealCsvExport.fileName(noon, paris))
+    }
+
+    @Test
+    fun `every preset range starts at or before today's first minute`() {
+        val todayStart = ExportRange.startOfDay(noon, paris)
+        ExportRange.entries.forEach { range ->
+            assertTrue(
+                "${range.label} must include the day in progress",
+                range.startFrom(noon, paris) <= todayStart,
+            )
+        }
+    }
+
+    @Test
+    fun `last 7 days spans seven whole days ending with today`() {
+        val from = ExportRange.WEEK.startFrom(noon, paris)
+        assertEquals(ExportRange.startOfDay(noon, paris) - 6 * ExportRange.DAY_MS, from)
+        // A meal logged a minute ago and one logged at the very start of day seven are
+        // both inside the window.
+        assertTrue(noon >= from)
+        assertTrue(ExportRange.startOfDay(noon - 6 * ExportRange.DAY_MS, paris) >= from)
+    }
+
+    @Test
+    fun `everything reaches back past any recorded meal`() {
+        assertEquals(0L, ExportRange.ALL.startFrom(noon, paris))
+    }
+
+    @Test
+    fun `a picked date is read as a calendar day, not as an instant`() {
+        // The date picker reports midnight UTC. West of Greenwich that instant still
+        // belongs to the previous local day, which would silently widen the export.
+        val pickedUtcMidnight = 1_788_307_200_000L // 2026-09-02T00:00:00Z
+        val newYork = ZoneId.of("America/New_York")
+        assertEquals(
+            ExportRange.startOfDay(
+                java.time.ZonedDateTime.of(2026, 9, 2, 9, 0, 0, 0, newYork)
+                    .toInstant().toEpochMilli(),
+                newYork,
+            ),
+            ExportRange.startOfPickedDate(pickedUtcMidnight, newYork),
+        )
     }
 }

@@ -58,6 +58,10 @@ interface MealDao {
     @Query("SELECT * FROM meals WHERE id = :id")
     fun observeMeal(id: Long): Flow<MealWithEntries?>
 
+    @Transaction
+    @Query("SELECT * FROM meals WHERE startedAt >= :from ORDER BY startedAt ASC")
+    suspend fun mealsSince(from: Long): List<MealWithEntries>
+
     @Insert
     suspend fun insertMeal(meal: Meal): Long
 

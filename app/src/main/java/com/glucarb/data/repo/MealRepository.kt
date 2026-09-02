@@ -30,6 +30,9 @@ class MealRepository(
 
     fun observeMeal(id: Long): Flow<MealWithEntries?> = dao.observeMeal(id)
 
+    /** Meals started at or after [from]. Used by the history export. */
+    suspend fun mealsSince(from: Long): List<MealWithEntries> = dao.mealsSince(from)
+
     fun observeUsage(): Flow<List<com.glucarb.data.dao.UsageRow>> = dao.observeUsage()
 
     /**

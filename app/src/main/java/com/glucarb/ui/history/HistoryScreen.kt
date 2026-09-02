@@ -1,5 +1,7 @@
 package com.glucarb.ui.history
 
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -10,23 +12,29 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.IosShare
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -34,6 +42,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
@@ -43,6 +52,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.glucarb.data.dao.MealWithEntries
 import com.glucarb.data.entity.MealEntry
 import com.glucarb.domain.CarbMath
+import com.glucarb.domain.MealCsvExport
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -55,14 +65,45 @@ fun HistoryScreen(
 ) {
     val days by viewModel.days.collectAsStateWithLifecycle()
     val editing by viewModel.editing.collectAsStateWithLifecycle()
+    val exporting by viewModel.exporting.collectAsStateWithLifecycle()
+    val context = LocalContext.current
+    val snackbar = remember { SnackbarHostState() }
+    var exportDialog by remember { mutableStateOf(false) }
+    var pendingFrom by remember { mutableStateOf(0L) }
+
+    val saveLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.CreateDocument(MealCsvExport.MIME_TYPE),
+    ) { uri -> uri?.let { viewModel.exportTo(it, pendingFrom) } }
+
+    LaunchedEffect(Unit) {
+        viewModel.events.collect { event ->
+            when (event) {
+                is ExportEvent.Message -> snackbar.showSnackbar(event.text)
+                is ExportEvent.Share -> shareCsv(context, event.uri)
+            }
+        }
+    }
 
     Scaffold(
+        snackbarHost = { SnackbarHost(snackbar) },
         topBar = {
             TopAppBar(
                 title = { Text("History") },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                    }
+                },
+                actions = {
+                    if (exporting) {
+                        CircularProgressIndicator(
+                            strokeWidth = 2.dp,
+                            modifier = Modifier.padding(end = 16.dp).size(20.dp),
+                        )
+                    } else if (days.isNotEmpty()) {
+                        IconButton(onClick = { exportDialog = true }) {
+                            Icon(Icons.Filled.IosShare, contentDescription = "Export")
+                        }
                     }
                 },
             )
@@ -103,6 +144,23 @@ fun HistoryScreen(
                 }
             }
         }
+    }
+
+    if (exportDialog) {
+        ExportDialog(
+            onDismiss = { exportDialog = false },
+            onSave = { from ->
+                exportDialog = false
+                pendingFrom = from
+                saveLauncher.launch(MealCsvExport.fileName(from))
+            },
+            onShare = { from ->
+                exportDialog = false
+                viewModel.exportForSharing(from)
+            },
+            startOf = viewModel::startOf,
+            startOfPickedDay = viewModel::startOfPickedDay,
+        )
     }
 
     editing?.let { entry ->
@@ -172,6 +230,29 @@ private fun entryAmount(entry: MealEntry): String = when {
     entry.enteredAsPortions && entry.portionsValue != null ->
         "${CarbMath.format(entry.portionsValue)} \u00D7"
     else -> "${CarbMath.format(entry.quantity)} ${entry.unit.label}"
+}
+
+/**
+ * Hands the CSV to whatever the user picks.
+ *
+ * Always a chooser, never a remembered target: unlike the AI photo prompt this is an
+ * occasional action, and the sensible destination changes with intent - a chat, a mail,
+ * a drive.
+ */
+private fun shareCsv(context: android.content.Context, uri: android.net.Uri) {
+    val intent = android.content.Intent(android.content.Intent.ACTION_SEND).apply {
+        type = MealCsvExport.MIME_TYPE
+        putExtra(android.content.Intent.EXTRA_STREAM, uri)
+        clipData = android.content.ClipData.newUri(context.contentResolver, "meals", uri)
+        addFlags(android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION)
+    }
+    runCatching {
+        context.startActivity(
+            android.content.Intent.createChooser(intent, "Export meals").apply {
+                addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)
+            },
+        )
+    }
 }
 
 @Composable

@@ -7,6 +7,7 @@ import com.glucarb.data.dao.FoodItemDao
 import com.glucarb.data.dao.MealDao
 import com.glucarb.data.repo.FoodRepository
 import com.glucarb.data.repo.BackupManager
+import com.glucarb.data.repo.MealExporter
 import com.glucarb.data.repo.MealRepository
 import com.glucarb.data.repo.PhotoStore
 import com.glucarb.data.repo.SettingsRepository
@@ -60,4 +61,12 @@ object AppModule {
         db: CarbDatabase,
         photos: PhotoStore,
     ): BackupManager = BackupManager(context, db, photos)
+
+    @Provides
+    @Singleton
+    fun mealExporter(
+        @ApplicationContext context: Context,
+        meals: MealRepository,
+        photos: PhotoStore,
+    ): MealExporter = MealExporter(context, meals, photos)
 }

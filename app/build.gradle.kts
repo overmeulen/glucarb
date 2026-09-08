@@ -22,7 +22,9 @@ android {
     compileSdk = 36
 
     defaultConfig {
-        applicationId = "com.glucarb"
+        // Permanent Play Store identity - can never be changed after the first upload.
+        // Kept distinct from `namespace` (the Kotlin package) on purpose.
+        applicationId = "io.github.overmeulen.glucarb"
         minSdk = 26
         targetSdk = 36
         versionCode = 1

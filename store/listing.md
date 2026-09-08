@@ -1,9 +1,13 @@
 # Play Store listing - Glucarb
 
-Everything below is ready to paste into Play Console. Wording is deliberately free of
-"diabetes", "insulin", "dose" and "blood sugar": a tool that records and adds up grams
-of carbohydrate is not a medical device, but a listing that implies dosing advice
-invites a medical-app review under Play's Health apps policy.
+Everything below is ready to paste into Play Console.
+
+The listing names diabetes only to say who built the app and who it is for. It carefully
+avoids "insulin", "dose", "bolus", "blood sugar" and any suggestion that the app tells
+you what to do with the number it produces. That line matters: stating an audience is
+not a medical claim, but a listing that implies dosing advice would put the app under
+Play's Health apps policy and, in the EU, into medical-device territory. Keep additions
+on the safe side of it.
 
 ---
 
@@ -35,9 +39,13 @@ A fast carbohydrate log. Build your catalog, tap, done. No account, no ads.
 Glucarb is a carbohydrate log built around a single idea: recording a meal should take
 seconds, not minutes.
 
-Most food apps hand you a giant database you have to search through every time. Glucarb
-works the other way round. You build a small catalog of the things you actually eat, and
-from then on logging is a couple of taps.
+It was designed by a diabetic, for diabetics. Counting carbohydrates is something you do
+several times a day, every day, for years. An app that takes a minute of fiddling per
+meal is an app you stop using by the end of the month. So the whole thing is built
+around keeping that count down to a few taps.
+
+You build a small catalog of the things you actually eat, and from then on logging is a
+couple of taps.
 
 
 YOUR OWN CATALOG
@@ -100,8 +108,10 @@ ALSO
 - Uses your existing camera and gallery apps, so it never needs access to either
 
 
-Glucarb is a record-keeping and arithmetic tool. It does not provide medical advice and
-is not intended to diagnose, treat or manage any condition.
+Glucarb is a record-keeping and arithmetic tool: you supply the carbohydrate values and
+it adds them up. It does not provide medical advice, does not recommend insulin doses,
+and is not a substitute for the guidance of your own healthcare team. Always check the
+figures against your own judgement.
 ```
 
 ---

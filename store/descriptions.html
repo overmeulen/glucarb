@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Glucarb - store descriptions</title>
+<style>
+  body {
+    font-family: -apple-system, "Segoe UI", Roboto, sans-serif;
+    margin: 0 auto;
+    max-width: 48rem;
+    padding: 1.5rem 1rem 4rem;
+    background: #0f1115;
+    color: #e6e6e6;
+    line-height: 1.5;
+  }
+  h1 { font-size: 1.4rem; margin: 0 0 0.3rem; }
+  .sub { color: #8b93a1; margin: 0 0 1.5rem; font-size: 0.92rem; }
+  h2 { font-size: 1.02rem; margin: 0; }
+  .card {
+    background: #171a21;
+    border: 1px solid #262b36;
+    border-radius: 10px;
+    padding: 1rem;
+    margin-bottom: 1.75rem;
+  }
+  .head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    margin-bottom: 0.75rem;
+  }
+  .count { color: #8b93a1; font-size: 0.82rem; }
+  textarea {
+    width: 100%;
+    box-sizing: border-box;
+    background: #0b0d11;
+    color: #dfe4ea;
+    border: 1px solid #2b313d;
+    border-radius: 8px;
+    padding: 0.75rem;
+    font: 400 0.92rem/1.5 ui-monospace, "Cascadia Mono", Menlo, monospace;
+    resize: vertical;
+    -webkit-user-select: text;
+    user-select: text;
+  }
+  textarea.short { height: 4.5rem; }
+  textarea.full { height: 26rem; }
+  button {
+    background: #5BD08A;
+    color: #08130c;
+    border: 0;
+    border-radius: 8px;
+    padding: 0.6rem 1.1rem;
+    font-size: 0.95rem;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+  button.done { background: #2f855a; color: #eaffef; }
+  .hint {
+    margin-top: 0.6rem;
+    font-size: 0.83rem;
+    color: #8b93a1;
+  }
+  .warn {
+    background: #2a1f14;
+    border: 1px solid #6b4a1f;
+    border-radius: 8px;
+    padding: 0.8rem 1rem;
+    margin-bottom: 1.75rem;
+    font-size: 0.9rem;
+  }
+  a { color: #5BD08A; }
+</style>
+</head>
+<body>
+
+<h1>Glucarb - store descriptions</h1>
+<p class="sub">Paste-ready. Line wrapping has been removed so Play renders clean paragraphs.</p>
+
+<div class="warn">
+  Keep <strong>insulin</strong>, <strong>dose</strong>, <strong>bolus</strong> and
+  <strong>blood sugar</strong> out of these fields. Naming diabetes states who the app is
+  for; implying dosing advice puts it under Play's Health apps policy and, in the EU, into
+  medical-device territory.
+</div>
+
+<div class="card">
+  <div class="head">
+    <h2>Short description</h2>
+    <span class="count">71 / 80</span>
+  </div>
+  <textarea class="short" readonly>Count the carbs in your meals in seconds. Private, offline, no account.</textarea>
+  <button data-copy="short">Copy</button>
+  <p class="hint">Tap the box to select everything if the button does not work.</p>
+</div>
+
+<div class="card">
+  <div class="head">
+    <h2>Full description</h2>
+    <span class="count">3250 / 4000</span>
+  </div>
+  <textarea class="full" readonly>Glucarb is a carbohydrate log built around a single idea: recording a meal should take seconds, not minutes.
+
+It was designed by a diabetic, for diabetics. Counting carbohydrates is something you do several times a day, every day, for years. An app that takes a minute of fiddling per meal is an app you stop using by the end of the month. So the whole thing is built around keeping that count down to a few taps.
+
+You build a small catalog of the things you actually eat, and from then on logging is a couple of taps.
+
+YOUR OWN CATALOG
+
+Add the foods you eat, with a photo so you can recognise them at a glance. Choose grams or millilitres, enter the carbohydrate content per 100 g or 100 ml, and you are done.
+
+For things that are naturally counted rather than weighed - slices of bread, biscuits, squares of chocolate - mark the item as available in portions and give the weight of one portion. You can then log "3 slices" instead of reaching for the scales.
+
+BUILT FOR SPEED
+
+The home screen shows your foods as large tiles. Tap one, tap an amount, and it is in the meal. Glucarb remembers the amounts you use most for each food and offers them as one-tap shortcuts, so your regular breakfast takes about four taps in total.
+
+The running total for the meal is the biggest thing on the screen. There is no "finish" button to remember: a meal closes itself after a period of inactivity that you choose.
+
+PHOTO ESTIMATES, WITH THE ASSISTANT YOU ALREADY USE
+
+Eating something that is not in your catalog, and not easy to weigh? Take a photo and hand it to an AI assistant already installed on your phone. Glucarb passes the picture across, you paste the question, and the number it gives you comes straight back into the meal.
+
+Glucarb has no AI of its own and no server. You choose which app receives the photo, and nothing is sent anywhere unless you tap that button.
+
+HISTORY AND EXPORT
+
+Every meal is kept with its date and time. When you want to look at the bigger picture, export your history from any starting date as a plain CSV file with two columns: when the meal was, and how many grams of carbohydrate it contained.
+
+That format is deliberately minimal. It opens in any spreadsheet, and it is simple enough to hand to an AI assistant and ask questions about it in plain language.
+
+PRIVATE BY CONSTRUCTION, NOT BY PROMISE
+
+Glucarb requests no Android permissions at all. It is built without internet access, so it is not merely unwilling to send your information somewhere - it is incapable of it.
+
+No account. No sign-in. No ads. No analytics. No tracking.
+
+Your catalog and your history live on your phone. You can export a full backup archive at any time and restore it on another device, so your data is never trapped in the app.
+
+ALSO
+
+- Works entirely offline, including on a phone in airplane mode
+- Dark theme
+- No subscription and no in-app purchases
+- Uses your existing camera and gallery apps, so it never needs access to either
+
+Glucarb is a record-keeping and arithmetic tool: you supply the carbohydrate values and it adds them up. It does not provide medical advice, does not recommend insulin doses, and is not a substitute for the guidance of your own healthcare team. Always check the figures against your own judgement.</textarea>
+  <button data-copy="full">Copy</button>
+  <p class="hint">Tap the box to select everything if the button does not work.</p>
+</div>
+
+<p><a href="preview.html">Back to store graphics</a></p>
+
+<script>
+  // This page is served over plain http on a LAN address, which is not a secure context,
+  // so navigator.clipboard is undefined in Chrome on Android - exactly the browser this
+  // page exists for. execCommand('copy') is deprecated but remains the only thing that
+  // works here, so it is the fallback rather than the other way round.
+  function copyText(area, button) {
+    area.focus();
+    area.select();
+    area.setSelectionRange(0, area.value.length);
+
+    var ok = false;
+    try { ok = document.execCommand('copy'); } catch (e) { ok = false; }
+
+    if (!ok && navigator.clipboard) {
+      navigator.clipboard.writeText(area.value).then(function () {
+        flash(button, 'Copied');
+      }, function () {
+        flash(button, 'Select and copy manually');
+      });
+      return;
+    }
+    flash(button, ok ? 'Copied' : 'Select and copy manually');
+  }
+
+  function flash(button, message) {
+    var original = button.textContent;
+    button.textContent = message;
+    button.classList.add('done');
+    setTimeout(function () {
+      button.textContent = original;
+      button.classList.remove('done');
+    }, 1600);
+  }
+
+  document.querySelectorAll('button[data-copy]').forEach(function (button) {
+    var area = document.querySelector('textarea.' + button.dataset.copy);
+    button.addEventListener('click', function () { copyText(area, button); });
+  });
+
+  // Tapping the text selects all of it, so a manual long-press copy needs no dragging.
+  document.querySelectorAll('textarea').forEach(function (area) {
+    area.addEventListener('focus', function () { area.select(); });
+  });
+</script>
+
+</body>
+</html>

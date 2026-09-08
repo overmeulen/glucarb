@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Glucarb - store descriptions</title>
+<style>
+  body {
+    font-family: -apple-system, "Segoe UI", Roboto, sans-serif;
+    margin: 0 auto;
+    max-width: 48rem;
+    padding: 1.5rem 1rem 4rem;
+    background: #0f1115;
+    color: #e6e6e6;
+    line-height: 1.5;
+  }
+  h1 { font-size: 1.4rem; margin: 0 0 0.3rem; }
+  .sub { color: #8b93a1; margin: 0 0 1.5rem; font-size: 0.92rem; }
+  h2 { font-size: 1.02rem; margin: 0; }
+  .card {
+    background: #171a21;
+    border: 1px solid #262b36;
+    border-radius: 10px;
+    padding: 1rem;
+    margin-bottom: 1.75rem;
+  }
+  .head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    margin-bottom: 0.75rem;
+  }
+  .count { color: #8b93a1; font-size: 0.82rem; }
+  textarea {
+    width: 100%;
+    box-sizing: border-box;
+    background: #0b0d11;
+    color: #dfe4ea;
+    border: 1px solid #2b313d;
+    border-radius: 8px;
+    padding: 0.75rem;
+    font: 400 0.92rem/1.5 ui-monospace, "Cascadia Mono", Menlo, monospace;
+    resize: vertical;
+    -webkit-user-select: text;
+    user-select: text;
+  }
+  textarea.short { height: 4.5rem; }
+  textarea.full { height: 26rem; }
+  button {
+    background: #5BD08A;
+    color: #08130c;
+    border: 0;
+    border-radius: 8px;
+    padding: 0.6rem 1.1rem;
+    font-size: 0.95rem;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+  button.done { background: #2f855a; color: #eaffef; }
+  .hint {
+    margin-top: 0.6rem;
+    font-size: 0.83rem;
+    color: #8b93a1;
+  }
+  .warn {
+    background: #2a1f14;
+    border: 1px solid #6b4a1f;
+    border-radius: 8px;
+    padding: 0.8rem 1rem;
+    margin-bottom: 1.75rem;
+    font-size: 0.9rem;
+  }
+  a { color: #5BD08A; }
+</style>
+</head>
+<body>
+
+<h1>Glucarb - store descriptions</h1>
+<p class="sub">Paste-ready. Line wrapping has been removed so Play renders clean paragraphs.</p>
+
+<div class="warn">
+  Keep <strong>insulin</strong>, <strong>dose</strong>, <strong>bolus</strong> and
+  <strong>blood sugar</strong> out of these fields. Naming diabetes states who the app is
+  for; implying dosing advice puts it under Play's Health apps policy and, in the EU, into
+  medical-device territory.
+</div>
+
+<div class="card">
+  <div class="head">
+    <h2>Short description</h2>
+    <span class="count">{{SHORT_LEN}} / 80</span>
+  </div>
+  <textarea class="short" readonly>{{SHORT}}</textarea>
+  <button data-copy="short">Copy</button>
+  <p class="hint">Tap the box to select everything if the button does not work.</p>
+</div>
+
+<div class="card">
+  <div class="head">
+    <h2>Full description</h2>
+    <span class="count">{{FULL_LEN}} / 4000</span>
+  </div>
+  <textarea class="full" readonly>{{FULL}}</textarea>
+  <button data-copy="full">Copy</button>
+  <p class="hint">Tap the box to select everything if the button does not work.</p>
+</div>
+
+<p><a href="preview.html">Back to store graphics</a></p>
+
+<script>
+  // This page is served over plain http on a LAN address, which is not a secure context,
+  // so navigator.clipboard is undefined in Chrome on Android - exactly the browser this
+  // page exists for. execCommand('copy') is deprecated but remains the only thing that
+  // works here, so it is the fallback rather than the other way round.
+  function copyText(area, button) {
+    area.focus();
+    area.select();
+    area.setSelectionRange(0, area.value.length);
+
+    var ok = false;
+    try { ok = document.execCommand('copy'); } catch (e) { ok = false; }
+
+    if (!ok && navigator.clipboard) {
+      navigator.clipboard.writeText(area.value).then(function () {
+        flash(button, 'Copied');
+      }, function () {
+        flash(button, 'Select and copy manually');
+      });
+      return;
+    }
+    flash(button, ok ? 'Copied' : 'Select and copy manually');
+  }
+
+  function flash(button, message) {
+    var original = button.textContent;
+    button.textContent = message;
+    button.classList.add('done');
+    setTimeout(function () {
+      button.textContent = original;
+      button.classList.remove('done');
+    }, 1600);
+  }
+
+  document.querySelectorAll('button[data-copy]').forEach(function (button) {
+    var area = document.querySelector('textarea.' + button.dataset.copy);
+    button.addEventListener('click', function () { copyText(area, button); });
+  });
+
+  // Tapping the text selects all of it, so a manual long-press copy needs no dragging.
+  document.querySelectorAll('textarea').forEach(function (area) {
+    area.addEventListener('focus', function () { area.select(); });
+  });
+</script>
+
+</body>
+</html>

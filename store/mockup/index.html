@@ -1,0 +1,658 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Glucarb &mdash; Mockup</title>
+<style>
+:root{
+  --bg:#12141a; --surface:#1b1e26; --surface2:#242833; --line:#2f3442;
+  --txt:#eef1f7; --dim:#9aa3b5; --acc:#5bd08a; --acc2:#3aa870; --warn:#f0a742;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#0a0b0e;color:var(--txt);font:14px/1.4 -apple-system,Segoe UI,Roboto,sans-serif;padding:28px 20px 60px}
+h1{font-size:20px;font-weight:600;margin-bottom:4px}
+.sub{color:var(--dim);font-size:13px;margin-bottom:26px}
+.rail{display:flex;gap:26px;overflow-x:auto;padding-bottom:20px;align-items:flex-start}
+.screen{flex:0 0 auto}
+.cap{color:var(--dim);font-size:12px;margin:0 0 8px 4px;letter-spacing:.4px;text-transform:uppercase}
+.cap b{color:var(--acc);font-weight:600}
+.phone{width:300px;height:620px;background:var(--bg);border-radius:30px;border:8px solid #23262f;
+  position:relative;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 18px 40px rgba(0,0,0,.55)}
+.status{height:24px;display:flex;align-items:center;justify-content:space-between;padding:0 14px;font-size:10px;color:var(--dim);flex:0 0 auto}
+
+/* The meal band: total on the left, what is in the meal on the right, then a hard
+   edge. Above it is what you have eaten, below it is what you might add. */
+.hero{padding:8px 10px 11px 14px;flex:0 0 auto;background:rgba(255,255,255,.035);border-bottom:1px solid var(--line)}
+.hero .top{display:flex;align-items:center;gap:4px;margin-bottom:2px}
+.hero .lbl{color:var(--dim);font-size:11px;text-transform:uppercase;letter-spacing:.6px;flex:1}
+.hero .ic2{color:var(--dim);font-size:13px;padding:0 3px}
+.hero .band{display:flex;align-items:center;gap:12px}
+.hero .tot{flex:0 0 auto}
+.hero .big{font-size:60px;font-weight:700;line-height:.98;letter-spacing:-2.5px}
+.hero .un{font-size:12px;color:var(--dim);margin-top:1px}
+.mealgrid{flex:1;min-width:0;display:grid;grid-template-columns:1fr 1fr;gap:5px;max-height:104px;overflow:hidden}
+.mealgrid.one{grid-template-columns:1fr}
+.chipm{background:var(--surface);border:1px solid var(--line);border-radius:9px;padding:5px 7px;font-size:11px;
+  display:flex;gap:4px;align-items:center;min-width:0;white-space:nowrap;overflow:hidden}
+.chipm span{overflow:hidden;text-overflow:ellipsis}
+.chipm b{color:var(--acc);font-weight:600;margin-left:auto;padding-left:4px}
+.chipm.pending{border-color:var(--warn);color:var(--warn)}
+.chipm.pending b{color:var(--warn)}
+
+.search{margin:12px 14px 10px;background:var(--surface);border:1px solid var(--line);border-radius:12px;
+  padding:9px 12px;color:var(--dim);font-size:13px;display:flex;gap:8px;align-items:center;flex:0 0 auto}
+.toggle{display:flex;gap:2px;background:var(--surface2);border-radius:8px;padding:2px;margin-left:auto}
+.toggle div{padding:3px 7px;border-radius:6px;font-size:10px;color:var(--dim)}
+.toggle div.on{background:var(--line);color:var(--txt)}
+
+.scroll{flex:1;overflow:hidden;padding:0 14px 12px}
+.sect{color:var(--dim);font-size:10px;text-transform:uppercase;letter-spacing:.6px;margin:4px 0 8px}
+.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.tile{aspect-ratio:1;border-radius:13px;position:relative;overflow:hidden;background:var(--surface2);
+  display:flex;align-items:flex-end;border:1px solid var(--line)}
+.tile .em{position:absolute;inset:0 0 18% 0;display:flex;align-items:center;justify-content:center;font-size:34px;opacity:.92}
+.tile .nm{position:relative;width:100%;padding:14px 6px 5px;font-size:10px;font-weight:600;text-align:center;
+  background:linear-gradient(transparent,rgba(0,0,0,.85));z-index:2;line-height:1.15}
+.tile .badge{position:absolute;top:5px;right:5px;background:rgba(0,0,0,.6);border-radius:5px;font-size:8px;padding:2px 4px;z-index:3;color:var(--acc)}
+.tile.letter{background:linear-gradient(135deg,#3d4a63,#2a3346)}
+.tile.letter .em{font-size:30px;font-weight:700;color:#93a4c7}
+
+.lrow{display:flex;align-items:center;gap:10px;padding:9px 4px;border-bottom:1px solid var(--line)}
+.lthumb{width:38px;height:38px;border-radius:9px;background:var(--surface2);display:flex;align-items:center;justify-content:center;font-size:20px;flex:0 0 auto}
+.lname{font-size:13px;font-weight:500}
+.lmeta{font-size:10px;color:var(--dim);margin-top:2px}
+.ladd{margin-left:auto;color:var(--acc);font-size:18px}
+
+/* ---- icon picker ---- */
+.idrow{display:flex;gap:12px;align-items:center;margin:12px 0 2px}
+.avatar{width:74px;height:74px;border-radius:18px;background:linear-gradient(135deg,#3d4a63,#2a3346);
+  display:flex;align-items:center;justify-content:center;font-size:38px;flex:0 0 auto}
+.sugg{display:flex;gap:6px;overflow:hidden}
+.sc{width:36px;height:36px;border-radius:50%;background:var(--surface2);border:1px solid var(--line);
+  display:flex;align-items:center;justify-content:center;font-size:18px;flex:0 0 auto}
+.sc.on{border:2px solid var(--acc);background:rgba(126,231,168,.16)}
+.idbtns{display:flex;gap:2px;margin-top:6px}
+.idbtns span{color:var(--acc);font-size:12px;padding:4px 6px}
+.sheet{margin-top:auto;background:var(--surface);border-radius:18px 18px 0 0;border-top:1px solid var(--line);padding:12px 14px 16px}
+.sheet .grab{width:34px;height:4px;border-radius:2px;background:var(--line);margin:0 auto 12px}
+.icongrid{display:grid;grid-template-columns:repeat(6,1fr);gap:7px;margin-top:8px}
+.icongrid .sc{width:100%;aspect-ratio:1;height:auto;font-size:19px}
+
+/* ---- action buttons ---- */
+.vphone{height:330px;padding-top:14px}
+.vgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;padding:0 14px}
+.vfade{position:absolute;left:0;right:0;bottom:0;height:120px;
+  background:linear-gradient(to bottom,rgba(18,20,26,0) 0%,var(--bg) 62%)}
+.vrow{position:absolute;right:14px;bottom:16px;display:flex;align-items:center;gap:12px}
+.vcirc{width:56px;height:56px;border-radius:18px;display:flex;align-items:center;justify-content:center;font-size:24px}
+.vcirc.acc{background:var(--acc);color:#0c2417;font-weight:300;font-size:28px;box-shadow:0 6px 18px rgba(91,208,138,.35)}
+.vcirc.ghost{background:var(--surface2);color:var(--acc);border:1px solid var(--line)}
+.vnote{width:300px;margin-top:10px;font-size:11px;line-height:1.55;color:var(--dim)}
+.vnote b{color:var(--txt)}
+.ic{width:24px;height:24px;fill:currentColor;display:block}
+.iconpanel{width:360px;display:flex;flex-direction:column;gap:10px}
+.iconrow{display:flex;align-items:center;gap:12px;padding:12px;border-radius:14px;
+  background:var(--surface);border:1px solid var(--line)}
+.iconrow.good{border-color:var(--acc);background:rgba(91,208,138,.07)}
+.iconrow.bad{opacity:.62}
+.iconmeta{font-size:11px;line-height:1.5;color:var(--dim);margin-left:4px}
+.iconmeta b{color:var(--txt);font-size:12px}
+.iconrow.good .iconmeta b{color:var(--acc)}
+
+.scrim{position:absolute;inset:0;background:rgba(0,0,0,.6);z-index:5}
+.sheet{position:absolute;left:0;right:0;bottom:0;background:var(--surface);border-radius:22px 22px 0 0;
+  padding:12px 16px 18px;z-index:6;border-top:1px solid var(--line)}
+.grab{width:34px;height:4px;background:var(--line);border-radius:3px;margin:0 auto 12px}
+.sh-head{display:flex;gap:10px;align-items:center;margin-bottom:14px}
+.sh-head .th{width:42px;height:42px;border-radius:11px;background:var(--surface2);display:flex;align-items:center;justify-content:center;font-size:22px}
+.sh-head .t{font-size:15px;font-weight:600}
+.sh-head .s{font-size:11px;color:var(--dim)}
+.amount{text-align:center;margin:2px 0 10px}
+.amount .v{font-size:38px;font-weight:700;letter-spacing:-1px}
+.amount .u{font-size:15px;color:var(--dim);margin-left:5px;font-weight:500}
+.amount .c{font-size:12px;color:var(--acc);margin-top:3px;font-weight:600}
+.chips{display:flex;gap:6px;justify-content:center;margin-bottom:12px;flex-wrap:wrap}
+.chip{background:var(--surface2);border:1px solid var(--line);border-radius:18px;padding:6px 12px;font-size:12px}
+.chip.on{background:rgba(91,208,138,.16);border-color:var(--acc);color:var(--acc);font-weight:600}
+.seg{display:flex;background:var(--surface2);border-radius:9px;padding:2px;margin:0 auto 12px;width:170px}
+.seg div{flex:1;text-align:center;padding:5px;font-size:11px;border-radius:7px;color:var(--dim)}
+.seg div.on{background:var(--line);color:var(--txt);font-weight:600}
+.pad{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-bottom:12px}
+.key{background:var(--surface2);border-radius:11px;padding:11px 0;text-align:center;font-size:18px;font-weight:500}
+.key.f{color:var(--dim);font-size:15px}
+.cta{display:flex;gap:8px}
+.btn{flex:1;background:var(--acc);color:#0c2417;font-weight:700;text-align:center;padding:13px;border-radius:13px;font-size:14px}
+.btn.ghost{flex:0 0 52px;background:var(--surface2);color:var(--dim);font-weight:500}
+.btn.danger{background:var(--bad,#e5484d);color:#fff}
+.opt{display:flex;align-items:center;gap:9px;padding:8px 2px;font-size:13px}
+.opt .rad{width:16px;height:16px;border-radius:50%;border:2px solid var(--line);flex:0 0 auto}
+.opt.on .rad{border-color:var(--acc);box-shadow:inset 0 0 0 3px var(--acc)}
+.opt.on{color:var(--acc);font-weight:600}
+.csv{background:#0d0f14;border:1px solid var(--line);border-radius:9px;padding:8px;font-family:ui-monospace,Menlo,Consolas,monospace;
+  font-size:8.5px;line-height:1.7;color:var(--dim);white-space:pre;overflow:hidden}
+.csv b{color:var(--acc);font-weight:600}
+
+.snack{position:absolute;left:12px;right:12px;bottom:14px;background:#eef1f7;color:#12141a;border-radius:11px;
+  padding:12px 14px;display:flex;align-items:center;font-size:12px;font-weight:500;z-index:7;box-shadow:0 8px 22px rgba(0,0,0,.4)}
+.snack b{margin-left:auto;color:var(--acc2);font-weight:700;text-transform:uppercase;font-size:11px;letter-spacing:.5px}
+
+.field{margin-bottom:12px}
+.field label{display:block;font-size:10px;color:var(--dim);text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px}
+.input{background:var(--surface);border:1px solid var(--line);border-radius:11px;padding:11px 12px;font-size:14px}
+.sw{display:flex;align-items:center;gap:10px;background:var(--surface);border:1px solid var(--line);border-radius:11px;padding:11px 12px;margin-bottom:12px}
+.sw .k{font-size:13px}
+.sw .d{font-size:10px;color:var(--dim);margin-top:2px}
+.knob{margin-left:auto;width:38px;height:22px;border-radius:12px;background:var(--acc);position:relative;flex:0 0 auto}
+.knob:after{content:"";position:absolute;width:17px;height:17px;border-radius:50%;background:#fff;top:2.5px;right:2.5px}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+.hint{font-size:10px;color:var(--dim);margin-top:-6px;margin-bottom:12px;line-height:1.4}
+
+.top{display:flex;align-items:center;gap:10px;padding:10px 14px 12px;font-size:16px;font-weight:600;flex:0 0 auto}
+.top .x{color:var(--dim);font-weight:400;font-size:19px}
+.top .save{margin-left:auto;color:var(--acc);font-size:13px;font-weight:600}
+
+.daygrp{margin-bottom:14px}
+.dayh{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:7px}
+.dayh .d{font-size:12px;font-weight:600}
+.dayh .t{font-size:11px;color:var(--dim)}
+.mealcard{background:var(--surface);border:1px solid var(--line);border-radius:13px;padding:11px 12px;margin-bottom:7px}
+.mealcard .h{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
+.mealcard .tm{font-size:11px;color:var(--dim)}
+.mealcard .tot{font-size:17px;font-weight:700}
+.mealcard .tot span{font-size:11px;color:var(--dim);font-weight:500}
+.mealcard .it{font-size:11px;color:var(--dim);line-height:1.6}
+
+.aicard{background:var(--surface);border:1px solid var(--warn);border-radius:14px;padding:12px;margin-bottom:12px}
+.aicard .t{font-size:12px;font-weight:600;color:var(--warn);margin-bottom:8px}
+.aiphoto{height:88px;border-radius:10px;background:linear-gradient(135deg,#4a3a2a,#33291f);display:flex;align-items:center;justify-content:center;font-size:36px;margin-bottom:10px}
+.parse{background:rgba(91,208,138,.12);border:1px solid var(--acc);border-radius:10px;padding:10px;font-size:11px;color:var(--acc);margin-bottom:10px}
+.parse b{font-size:18px;display:block;margin-top:3px}
+.empty{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:0 30px;text-align:center}
+.empty .ico{font-size:46px;opacity:.5}
+.empty .t{font-size:16px;font-weight:600}
+.empty .s{font-size:12px;color:var(--dim);line-height:1.5}
+.note{max-width:1000px;margin-top:26px;padding:16px 18px;background:var(--surface);border:1px solid var(--line);border-radius:14px;font-size:13px;color:var(--dim);line-height:1.7}
+.note b{color:var(--txt)}
+kbd{background:var(--surface2);border:1px solid var(--line);border-radius:5px;padding:1px 6px;font-size:11px;color:var(--acc)}
+</style>
+</head>
+<body>
+
+<h1>Glucarb &mdash; visual mockup</h1>
+<div class="sub">Static mockup of the agreed design. Scroll the row sideways &rarr;</div>
+
+<div class="rail">
+
+<div class="screen">
+  <div class="cap"><b>1</b> &middot; Home &mdash; grid</div>
+  <div class="phone">
+    <div class="status"><span>9:41</span><span>&#9650; 87%</span></div>
+    <div class="hero">
+      <div class="top">
+        <div class="lbl">Current meal</div>
+        <div class="ic2">&#8635;</div><div class="ic2">&#9881;</div>
+      </div>
+      <div class="band">
+        <div class="tot"><div class="big">47</div><div class="un">g carbs</div></div>
+        <div class="mealgrid">
+          <div class="chipm"><span>&#127838; Bread</span><b>28</b></div>
+          <div class="chipm"><span>&#129371; Milk</span><b>10</b></div>
+          <div class="chipm"><span>&#127822; Apple</span><b>9</b></div>
+        </div>
+      </div>
+    </div>
+    <div class="search">&#128269; Search&hellip;
+      <div class="toggle"><div class="on">&#9638;</div><div>&#9776;</div></div>
+    </div>
+    <div class="scroll">
+      <div class="sect">Suggested &middot; lunchtime</div>
+      <div class="grid">
+        <div class="tile"><div class="em">&#127837;</div><div class="nm">Pasta</div></div>
+        <div class="tile"><div class="em">&#127838;</div><div class="nm">Bread</div></div>
+        <div class="tile"><div class="em">&#127834;</div><div class="nm">Rice</div></div>
+        <div class="tile"><div class="em">&#129364;</div><div class="nm">Potato</div></div>
+        <div class="tile"><div class="em">&#127822;</div><div class="nm">Apple</div></div>
+        <div class="tile letter"><div class="em">Y</div><div class="nm">Yogurt</div></div>
+        <div class="tile"><div class="em">&#129371;</div><div class="nm">Milk</div></div>
+        <div class="tile"><div class="em">&#127820;</div><div class="nm">Banana</div></div>
+        <div class="tile"><div class="em">&#129472;</div><div class="nm">Cheese</div></div>
+      </div>
+    </div>
+    <div class="vrow">
+      <div class="vcirc ghost"><svg class="ic" viewBox="0 0 24 24"><path d="M20 4h-3.17L15 2H9L7.17 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 14H4V6h4.05l1.83-2h4.24l1.83 2H20v12zM12 7c-2.76 0-5 2.24-5 5s2.24 5 5 5 5-2.24 5-5-2.24-5-5-5zm0 8c-1.65 0-3-1.35-3-3s1.35-3 3-3 3 1.35 3 3-1.35 3-3 3z"/></svg></div>
+      <div class="vcirc acc">&#65291;</div>
+    </div>
+  </div>
+</div>
+
+<div class="screen">
+  <div class="cap"><b>2</b> &middot; Tap tile &rarr; quantity (a chip adds at once)</div>
+  <div class="phone">
+    <div class="status"><span>9:41</span><span>&#9650; 87%</span></div>
+    <div class="hero">
+      <div class="top">
+        <div class="lbl">Current meal</div>
+        <div class="ic2">&#8635;</div><div class="ic2">&#9881;</div>
+      </div>
+      <div class="band">
+        <div class="tot"><div class="big">47</div><div class="un">g carbs</div></div>
+        <div class="mealgrid">
+          <div class="chipm"><span>&#127838; Bread</span><b>28</b></div>
+          <div class="chipm"><span>&#129371; Milk</span><b>10</b></div>
+          <div class="chipm"><span>&#127822; Apple</span><b>9</b></div>
+        </div>
+      </div>
+    </div>
+    <div class="scroll"><div class="grid">
+      <div class="tile"><div class="em">&#127837;</div><div class="nm">Pasta</div></div>
+      <div class="tile"><div class="em">&#127838;</div><div class="nm">Bread</div></div>
+      <div class="tile"><div class="em">&#127834;</div><div class="nm">Rice</div></div>
+    </div></div>
+    <div class="scrim"></div>
+    <div class="sheet">
+      <div class="grab"></div>
+      <div class="sh-head">
+        <div class="th">&#127837;</div>
+        <div><div class="t">Pasta, cooked</div><div class="s">32 g carbs / 100 g</div></div>
+      </div>
+      <div class="amount">
+        <div class="v">150<span class="u">g</span></div>
+        <div class="c">48 g carbs</div>
+      </div>
+      <div class="chips">
+        <div class="chip on">150 g</div><div class="chip">200 g</div>
+      </div>
+      <div class="pad">
+        <div class="key">1</div><div class="key">2</div><div class="key">3</div>
+        <div class="key">4</div><div class="key">5</div><div class="key">6</div>
+        <div class="key">7</div><div class="key">8</div><div class="key">9</div>
+        <div class="key f">.</div><div class="key">0</div><div class="key f">&#9003;</div>
+      </div>
+      <div class="cta"><div class="btn">Add to meal</div><div class="btn ghost">&#10005;</div></div>
+    </div>
+  </div>
+</div>
+
+<div class="screen">
+  <div class="cap"><b>3</b> &middot; Portion item + undo</div>
+  <div class="phone">
+    <div class="status"><span>9:41</span><span>&#9650; 87%</span></div>
+    <div class="hero">
+      <div class="top">
+        <div class="lbl">Current meal</div>
+        <div class="ic2">&#8635;</div><div class="ic2">&#9881;</div>
+      </div>
+      <div class="band">
+        <div class="tot"><div class="big">75</div><div class="un">g carbs</div></div>
+        <div class="mealgrid">
+          <div class="chipm"><span>&#127838; Bread</span><b>28</b></div>
+          <div class="chipm"><span>&#129371; Milk</span><b>10</b></div>
+          <div class="chipm"><span>&#127822; Apple</span><b>9</b></div>
+          <div class="chipm"><span>&#127837; Pasta</span><b>28</b></div>
+        </div>
+      </div>
+    </div>
+    <div class="scroll"><div class="grid">
+      <div class="tile"><div class="em">&#127837;</div><div class="nm">Pasta</div></div>
+      <div class="tile"><div class="em">&#127838;</div><div class="nm">Bread</div></div>
+      <div class="tile"><div class="em">&#127834;</div><div class="nm">Rice</div></div>
+    </div></div>
+    <div class="scrim"></div>
+    <div class="sheet" style="padding-bottom:74px">
+      <div class="grab"></div>
+      <div class="sh-head">
+        <div class="th">&#127838;</div>
+        <div><div class="t">Wholemeal bread</div><div class="s">44 g carbs / 100 g &middot; 14 g / slice</div></div>
+      </div>
+      <div class="seg"><div class="on">Slices</div><div>Grams</div></div>
+      <div class="amount">
+        <div class="v">1.5<span class="u">slices</span></div>
+        <div class="c">21 g carbs</div>
+      </div>
+      <div class="chips">
+        <div class="chip on">1.5</div><div class="chip">2</div>
+      </div>
+      <div class="pad">
+        <div class="key">1</div><div class="key">2</div><div class="key">3</div>
+        <div class="key">4</div><div class="key">5</div><div class="key">6</div>
+        <div class="key">7</div><div class="key">8</div><div class="key">9</div>
+        <div class="key f">.5</div><div class="key">0</div><div class="key f">&#9003;</div>
+      </div>
+      <div class="cta"><div class="btn">Add to meal</div><div class="btn ghost">&#10005;</div></div>
+    </div>
+    <div class="snack">Added Wholemeal bread &middot; 21 g <b>Undo</b></div>
+  </div>
+</div>
+
+<div class="screen">
+  <div class="cap"><b>4</b> &middot; Search &rarr; create inline</div>
+  <div class="phone">
+    <div class="status"><span>9:41</span><span>&#9650; 87%</span></div>
+    <div class="hero">
+      <div class="top">
+        <div class="lbl">Current meal</div>
+        <div class="ic2">&#8635;</div><div class="ic2">&#9881;</div>
+      </div>
+      <div class="band">
+        <div class="tot"><div class="big">47</div><div class="un">g carbs</div></div>
+        <div class="mealgrid one">
+          <div class="chipm"><span>&#127838; Bread</span><b>28</b></div>
+          <div class="chipm"><span>&#129371; Milk</span><b>10</b></div>
+        </div>
+      </div>
+    </div>
+    <div class="search" style="border-color:var(--acc);color:var(--txt)">&#128269; quino
+      <div class="toggle"><div>&#9638;</div><div class="on">&#9776;</div></div>
+    </div>
+    <div class="scroll">
+      <div class="sect">No match</div>
+      <div class="lrow" style="border-color:var(--acc)">
+        <div class="lthumb" style="color:var(--acc)">&#65291;</div>
+        <div><div class="lname">Create &ldquo;quino&rdquo;</div><div class="lmeta">New catalog item</div></div>
+        <div class="ladd">&rsaquo;</div>
+      </div>
+      <div class="sect" style="margin-top:16px">All items &middot; list view</div>
+      <div class="lrow"><div class="lthumb">&#127837;</div><div><div class="lname">Pasta, cooked</div><div class="lmeta">32 g / 100 g</div></div><div class="ladd">&#65291;</div></div>
+      <div class="lrow"><div class="lthumb">&#127838;</div><div><div class="lname">Wholemeal bread</div><div class="lmeta">44 g / 100 g &middot; 14 g / slice</div></div><div class="ladd">&#65291;</div></div>
+      <div class="lrow"><div class="lthumb">&#129371;</div><div><div class="lname">Semi-skimmed milk</div><div class="lmeta">5 g / 100 ml</div></div><div class="ladd">&#65291;</div></div>
+      <div class="lrow"><div class="lthumb">&#127834;</div><div><div class="lname">Basmati rice</div><div class="lmeta">28 g / 100 g</div></div><div class="ladd">&#65291;</div></div>
+      <div class="lrow"><div class="lthumb">&#127822;</div><div><div class="lname">Apple</div><div class="lmeta">11 g / 100 g &middot; 17 g / apple</div></div><div class="ladd">&#65291;</div></div>
+    </div>
+  </div>
+</div>
+
+<div class="screen">
+  <div class="cap"><b>5</b> &middot; New catalog item</div>
+  <div class="phone">
+    <div class="status"><span>9:41</span><span>&#9650; 87%</span></div>
+    <div class="top"><span class="x">&#10005;</span> New item <span class="save">Save</span></div>
+    <div class="scroll">
+      <div class="field"><label>Name</label><div class="input">Wholemeal bread</div></div>
+      <div class="idrow">
+        <div class="avatar">&#127838;</div>
+        <div style="flex:1;min-width:0">
+          <div class="sugg">
+            <div class="sc on">&#127838;</div>
+            <div class="sc">&#129366;</div>
+            <div class="sc">&#129360;</div>
+            <div class="sc">&#129374;</div>
+            <div class="sc">&#127834;</div>
+          </div>
+          <div class="idbtns"><span>Icons</span><span>Camera</span><span>Gallery</span><span>Clear</span></div>
+        </div>
+      </div>
+      <div class="hint">The icon follows the name as you type. &#127838; was applied on its own &mdash; the rest of the row is the same food family, one tap away.</div>
+      <div class="field"><label>Measurement unit</label>
+        <div class="seg" style="width:100%;margin-bottom:0"><div class="on">Grams (g)</div><div>Millilitres (ml)</div></div>
+      </div>
+      <div style="height:12px"></div>
+      <div class="field"><label>Carbs per 100 g</label><div class="input">44</div></div>
+      <div class="sw"><div><div class="k">Available in portions</div><div class="d">Slices, units, spoons&hellip;</div></div><div class="knob"></div></div>
+      <div class="two">
+        <div class="field"><label>Portion name</label><div class="input">slice</div></div>
+        <div class="field"><label>Weight of 1</label><div class="input">32 g</div></div>
+      </div>
+      <div class="hint">&rarr; 1 slice = 32 g = <span style="color:var(--acc)">14.1 g carbs</span></div>
+    </div>
+  </div>
+</div>
+
+<div class="screen">
+  <div class="cap"><b>5b</b> &middot; All icons</div>
+  <div class="phone">
+    <div class="status"><span>9:41</span><span>&#9650; 87%</span></div>
+    <div class="top"><span class="x">&#10005;</span> New item <span class="save">Save</span></div>
+    <div class="scroll" style="opacity:.35">
+      <div class="field"><label>Name</label><div class="input">Wholemeal bread</div></div>
+      <div class="idrow">
+        <div class="avatar">&#127838;</div>
+        <div style="flex:1"><div class="sugg"><div class="sc on">&#127838;</div><div class="sc">&#129366;</div><div class="sc">&#129360;</div></div></div>
+      </div>
+    </div>
+    <div class="sheet">
+      <div class="grab"></div>
+      <div class="search" style="margin:0 0 4px">&#128269; Search icons&hellip;</div>
+      <div class="sect">Fruit</div>
+      <div class="icongrid">
+        <div class="sc">&#127822;</div><div class="sc">&#127824;</div><div class="sc">&#127818;</div>
+        <div class="sc">&#127819;</div><div class="sc">&#127820;</div><div class="sc">&#127815;</div>
+        <div class="sc">&#127827;</div><div class="sc">&#127826;</div><div class="sc">&#127825;</div>
+        <div class="sc">&#127821;</div><div class="sc">&#129373;</div><div class="sc">&#127813;</div>
+      </div>
+      <div class="sect" style="margin-top:10px">Bread &amp; grains</div>
+      <div class="icongrid">
+        <div class="sc on">&#127838;</div><div class="sc">&#129366;</div><div class="sc">&#129360;</div>
+        <div class="sc">&#129374;</div><div class="sc">&#127834;</div><div class="sc">&#127833;</div>
+        <div class="sc">&#127836;</div><div class="sc">&#127837;</div><div class="sc">&#129384;</div>
+        <div class="sc">&#129379;</div><div class="sc">&#127806;</div><div class="sc">&#127832;</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="screen">
+  <div class="cap"><b>6</b> &middot; AI estimate &mdash; return</div>
+  <div class="phone">
+    <div class="status"><span>9:41</span><span>&#9650; 87%</span></div>
+    <div class="hero">
+      <div class="top">
+        <div class="lbl">Current meal</div>
+        <div class="ic2">&#8635;</div><div class="ic2">&#9881;</div>
+      </div>
+      <div class="band">
+        <div class="tot"><div class="big">47</div><div class="un">g carbs</div></div>
+        <div class="mealgrid">
+          <div class="chipm"><span>&#127838; Bread</span><b>28</b></div>
+          <div class="chipm"><span>&#127822; Apple</span><b>9</b></div>
+          <div class="chipm pending"><span>&#129302; Plate</span><b>&hellip;</b></div>
+        </div>
+      </div>
+    </div>
+    <div class="scroll">
+      <div class="aicard">
+        <div class="t">&#129302; AI estimate pending</div>
+        <div class="aiphoto">&#127835;</div>
+        <div class="parse">Found a number in your clipboard
+          <b>62 g carbs</b>
+        </div>
+        <div class="cta"><div class="btn">Confirm &amp; add</div><div class="btn danger">Discard</div></div>
+      </div>
+      <div class="sect">Sent to &middot; Gemini</div>
+      <div style="background:var(--surface);border:1px solid var(--line);border-radius:11px;padding:10px;font-size:10px;color:var(--dim);line-height:1.5">
+        &ldquo;Analyse this photo of food. Reply with ONLY a single number: the total grams of carbohydrates. No text, no units.&rdquo;
+        <div style="color:var(--acc);margin-top:7px">Copied to the clipboard too &middot; Edit prompt in Settings &rsaquo;</div>
+      </div>
+      <div style="margin-top:12px;font-size:11px;color:var(--dim)">&#9744; Also save as a catalog item</div>
+    </div>
+  </div>
+</div>
+
+<div class="screen">
+  <div class="cap"><b>7</b> &middot; History</div>
+  <div class="phone">
+    <div class="status"><span>9:41</span><span>&#9650; 87%</span></div>
+    <div class="top"><span class="x">&lsaquo;</span> History <span class="save">&#11123; Export</span></div>
+    <div class="scroll">
+      <div class="daygrp">
+        <div class="dayh"><div class="d">Today</div><div class="t">3 meals</div></div>
+        <div class="mealcard">
+          <div class="h"><div class="tm">12:34 &middot; open</div><div class="tot">47<span> g</span></div></div>
+          <div class="it">Bread 2 sl &middot; Milk 200 ml &middot; Apple 120 g</div>
+        </div>
+        <div class="mealcard">
+          <div class="h"><div class="tm">10:15</div><div class="tot">18<span> g</span></div></div>
+          <div class="it">Yogurt 125 g &middot; Banana 1</div>
+        </div>
+        <div class="mealcard">
+          <div class="h"><div class="tm">07:40</div><div class="tot">54<span> g</span></div></div>
+          <div class="it">Bread 3 sl &middot; Orange juice 200 ml</div>
+        </div>
+      </div>
+      <div class="daygrp">
+        <div class="dayh"><div class="d">Yesterday</div><div class="t">4 meals</div></div>
+        <div class="mealcard">
+          <div class="h"><div class="tm">19:50</div><div class="tot">71<span> g</span></div></div>
+          <div class="it">Pasta 180 g &middot; Bread 1 sl &middot; &#129302; Plate estimate 62 g</div>
+        </div>
+        <div class="mealcard">
+          <div class="h"><div class="tm">12:20</div><div class="tot">63<span> g</span></div></div>
+          <div class="it">Rice 200 g &middot; Apple 1</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="screen">
+  <div class="cap"><b>7b</b> &middot; Export &mdash; pick a starting point</div>
+  <div class="phone">
+    <div class="status"><span>9:41</span><span>&#9650; 87%</span></div>
+    <div class="top"><span class="x">&lsaquo;</span> History <span class="save">&#11123; Export</span></div>
+    <div class="scroll" style="filter:blur(1.5px);opacity:.4">
+      <div class="daygrp">
+        <div class="dayh"><div class="d">Today</div><div class="t">3 meals</div></div>
+        <div class="mealcard">
+          <div class="h"><div class="tm">12:34 &middot; open</div><div class="tot">47<span> g</span></div></div>
+          <div class="it">Bread 2 sl &middot; Milk 200 ml &middot; Apple 120 g</div>
+        </div>
+      </div>
+    </div>
+    <div class="scrim"></div>
+    <div class="sheet" style="border-radius:22px;left:14px;right:14px;bottom:auto;top:78px">
+      <div style="font-size:15px;font-weight:600;margin-bottom:4px">Export meals</div>
+      <div style="font-size:11px;color:var(--dim);line-height:1.5;margin-bottom:8px">
+        A CSV file with one row per meal &mdash; the time and the grams of carbs &mdash; ready to hand to an assistant for analysis.
+      </div>
+      <div class="opt"><span class="rad"></span>Last 7 days</div>
+      <div class="opt on"><span class="rad"></span>Last 30 days</div>
+      <div class="opt"><span class="rad"></span>Last 3 months</div>
+      <div class="opt"><span class="rad"></span>Everything</div>
+      <div class="opt"><span class="rad"></span>From a date&hellip;</div>
+      <div style="font-size:10px;color:var(--dim);margin:6px 0 0">Always runs up to now, today included.</div>
+      <div class="cta" style="margin-top:10px">
+        <div class="btn ghost" style="flex:1;border-radius:11px;padding:10px">Save file</div>
+        <div class="btn" style="border-radius:11px;padding:10px">Share</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="screen">
+  <div class="cap"><b>7c</b> &middot; What the file looks like</div>
+  <div class="phone">
+    <div class="status"><span>9:41</span><span>&#9650; 87%</span></div>
+    <div class="top"><span class="x">&lsaquo;</span> Glucarb-meals-from-2026-08-03.csv</div>
+    <div class="scroll">
+      <div class="sect">One row per meal</div>
+      <div class="csv"><b>meal_time,carbs_g</b>
+
+2026-09-01T07:38:00+02:00,54
+2026-09-01T12:15:00+02:00,63
+2026-09-01T19:50:00+02:00,71
+2026-09-02T07:40:00+02:00,54
+2026-09-02T10:15:00+02:00,18
+2026-09-02T12:34:00+02:00,47</div>
+      <div style="font-size:10px;color:var(--dim);line-height:1.6;margin-top:10px">
+        &bull; Two columns, nothing else &mdash; when you ate and how many grams of carbs.<br>
+        &bull; Times carry the local offset, so &ldquo;what about breakfast&rdquo; still works.<br>
+        &bull; The meal in progress is included; today is never cut off.<br>
+        &bull; AI estimates still waiting for an answer are left out entirely.
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="screen">
+  <div class="cap"><b>8</b> &middot; Day one</div>
+  <div class="phone">
+    <div class="status"><span>9:41</span><span>&#9650; 87%</span></div>
+    <div class="hero">
+      <div class="top"><div class="lbl">Current meal</div><div class="ic2">&#8635;</div><div class="ic2">&#9881;</div></div>
+      <div class="band"><div class="tot"><div class="big">0</div><div class="un">g carbs</div></div></div>
+    </div>
+    <div class="empty">
+      <div class="ico">&#129379;</div>
+      <div class="t">Your catalog is empty</div>
+      <div class="s">Add the foods you eat often. Each one takes 20 seconds and you never type it again.</div>
+      <div class="btn" style="flex:0;padding:12px 22px">&#65291; Add your first item</div>
+    </div>
+    <div style="padding:0 20px 22px;font-size:10px;color:var(--dim);text-align:center">or &#128247; estimate a plate with AI</div>
+  </div>
+</div>
+
+</div>
+
+<h1 style="margin-top:44px">Action buttons &mdash; option A, twin circles</h1>
+<div class="sub">Two identical 56&nbsp;dp buttons. Same size, different weight: <b>+</b> (new catalog item) is filled accent and primary, the camera is tonal and secondary.</div>
+
+<div class="rail">
+
+<div class="screen">
+  <div class="cap">Chosen layout</div>
+  <div class="phone vphone">
+    <div class="vgrid">
+      <div class="tile"><div class="em">&#127837;</div><div class="nm">Pasta</div></div>
+      <div class="tile"><div class="em">&#127838;</div><div class="nm">Bread</div></div>
+      <div class="tile"><div class="em">&#127834;</div><div class="nm">Rice</div></div>
+      <div class="tile"><div class="em">&#129364;</div><div class="nm">Potato</div></div>
+      <div class="tile"><div class="em">&#127822;</div><div class="nm">Apple</div></div>
+      <div class="tile letter"><div class="em">Y</div><div class="nm">Yogurt</div></div>
+    </div>
+    <div class="vfade"></div>
+    <div class="vrow">
+      <div class="vcirc ghost"><svg class="ic" viewBox="0 0 24 24"><path d="M20 4h-3.17L15 2H9L7.17 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 14H4V6h4.05l1.83-2h4.24l1.83 2H20v12zM12 7c-2.76 0-5 2.24-5 5s2.24 5 5 5 5-2.24 5-5-2.24-5-5-5zm0 8c-1.65 0-3-1.35-3-3s1.35-3 3-3 3 1.35 3 3-1.35 3-3 3z"/></svg></div>
+      <div class="vcirc acc">&#65291;</div>
+    </div>
+  </div>
+  <div class="vnote">Both stock <b>FloatingActionButton</b>s at the default 56&nbsp;dp, so their sizes cannot drift apart again. Only the container colour differs.</div>
+</div>
+
+<div class="screen">
+  <div class="cap">Camera icon &mdash; candidates</div>
+  <div class="iconpanel">
+
+    <div class="iconrow bad">
+      <div class="vcirc ghost"><svg class="ic" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3.2"/><path d="M9 2L7.17 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2h-3.17L15 2H9zm3 15c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5z"/></svg></div>
+      <div class="vcirc acc">&#65291;</div>
+      <div class="iconmeta"><b>PhotoCamera, filled</b> &mdash; current<br><span>Solid mass next to a hairline <b>+</b>. The weights fight; this is what looks wrong.</span></div>
+    </div>
+
+    <div class="iconrow good">
+      <div class="vcirc ghost"><svg class="ic" viewBox="0 0 24 24"><path d="M20 4h-3.17L15 2H9L7.17 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 14H4V6h4.05l1.83-2h4.24l1.83 2H20v12zM12 7c-2.76 0-5 2.24-5 5s2.24 5 5 5 5-2.24 5-5-2.24-5-5-5zm0 8c-1.65 0-3-1.35-3-3s1.35-3 3-3 3 1.35 3 3-1.35 3-3 3z"/></svg></div>
+      <div class="vcirc acc">&#65291;</div>
+      <div class="iconmeta"><b>CameraAlt, outlined</b> &mdash; recommended<br><span>Same hairline stroke as the <b>+</b>, so the pair reads as one family. Still unmistakably a camera.</span></div>
+    </div>
+
+    <div class="iconrow">
+      <div class="vcirc ghost"><svg class="ic" viewBox="0 0 24 24"><path d="M17 12c0-2.76-2.24-5-5-5s-5 2.24-5 5 2.24 5 5 5 5-2.24 5-5zm-5 3c-1.65 0-3-1.35-3-3s1.35-3 3-3 3 1.35 3 3-1.35 3-3 3zm-7 0H3v4c0 1.1.9 2 2 2h4v-2H5v-4zM5 5h4V3H5c-1.1 0-2 .9-2 2v4h2V5zm14-2h-4v2h4v4h2V5c0-1.1-.9-2-2-2zm0 16h-4v2h4c1.1 0 2-.9 2-2v-4h-2v4z"/></svg></div>
+      <div class="vcirc acc">&#65291;</div>
+      <div class="iconmeta"><b>CenterFocusStrong</b><br><span>Viewfinder. The prettiest geometry of the four, but it says &ldquo;focus&rdquo; more than &ldquo;photograph my plate&rdquo;.</span></div>
+    </div>
+
+    <div class="iconrow">
+      <div class="vcirc ghost"><svg class="ic" viewBox="0 0 24 24"><path d="M19 9l1.25-2.75L23 5l-2.75-1.25L19 1l-1.25 2.75L15 5l2.75 1.25L19 9zm-7.5.5L9 4 6.5 9.5 1 12l5.5 2.5L9 20l2.5-5.5L17 12l-5.5-2.5zM19 15l-1.25 2.75L15 19l2.75 1.25L19 23l1.25-2.75L23 19l-2.75-1.25L19 15z"/></svg></div>
+      <div class="vcirc acc">&#65291;</div>
+      <div class="iconmeta"><b>AutoAwesome</b><br><span>Says &ldquo;AI&rdquo; loudly, says &ldquo;take a photo&rdquo; not at all. Wrong first step for the user.</span></div>
+    </div>
+
+  </div>
+</div>
+
+</div>
+
+<div class="note">
+<b>The icon was not the whole problem.</b> The filled camera is a solid blob; the <b>+</b> is a hairline cross. At the same 56&nbsp;dp they read as different weights, which is what made the pair look unbalanced. Switching to the <b>outlined</b> camera matches the stroke and fixes it without changing the metaphor.<br>
+<b>Kept as a camera on purpose.</b> The first thing the user does is take a picture; sparkles would describe what happens afterwards, not what to tap.
+</div>
+
+<div class="note">
+<b>The 3-tap happy path</b> &mdash; screen 1 &rarr; 2: open app (Home, current meal already open) &rarr; tap <kbd>Pasta</kbd> &rarr; tap the <kbd>150 g</kbd> chip &rarr; <kbd>Add to meal</kbd>. The chip is pre-selected at your last-used quantity, so it is really <b>tap tile &rarr; tap Add</b> when nothing changed.<br>
+<b>Tiles</b> use your own photos (emoji stand-ins here). No photo &rarr; coloured initial tile (see &ldquo;Yogurt&rdquo;). Badge shows carbs/100 or the portion unit.<br>
+<b>Ordering</b> is frequency &times; recency bucketed by time of day &mdash; the &ldquo;Suggested &middot; lunchtime&rdquo; section reshuffles through the day.<br>
+<b>Portions</b> (screen 3) default to the portion unit with a Grams toggle; half steps supported; stored normalised to grams.<br>
+<b>AI</b> (screen 6): camera FAB &rarr; photo &rarr; shared to your chosen app with the saved prompt &rarr; come back &rarr; the clipboard number is parsed and needs one confirm tap.
+</div>
+
+</body>
+</html>

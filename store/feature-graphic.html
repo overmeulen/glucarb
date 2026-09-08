@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8">
+<style>
+  html, body { margin: 0; padding: 0; }
+  .canvas {
+    width: 1024px;
+    height: 500px;
+    background: radial-gradient(120% 160% at 18% 30%, #1c2230 0%, #12141A 60%);
+    display: flex;
+    align-items: center;
+    gap: 56px;
+    padding: 0 88px;
+    box-sizing: border-box;
+    font-family: "Segoe UI", -apple-system, Roboto, sans-serif;
+    color: #fff;
+  }
+  .mark {
+    flex: 0 0 auto;
+    width: 220px;
+    height: 220px;
+    border-radius: 52px;
+    background: #0d0f14;
+    box-shadow: 0 0 0 1px rgba(91, 208, 138, 0.18);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  h1 {
+    margin: 0;
+    font-size: 92px;
+    font-weight: 600;
+    letter-spacing: -2px;
+    line-height: 1;
+  }
+  p {
+    margin: 18px 0 0;
+    font-size: 34px;
+    font-weight: 400;
+    color: #9aa4b2;
+    line-height: 1.3;
+  }
+  .rule {
+    width: 96px;
+    height: 5px;
+    border-radius: 3px;
+    background: #5BD08A;
+    margin-top: 28px;
+  }
+</style>
+</head>
+<body>
+<!--
+  Play Store feature graphic, exactly 1024x500 as Play requires.
+
+  Play overlays its own UI on parts of this image on some surfaces, so the mark and the
+  text are kept well inside the edges and nothing important sits in the outer margin.
+  Deliberately no screenshots and no device frames here: Play rejects feature graphics
+  that look like a collage of screens, and no wording implies a medical purpose.
+-->
+<div class="canvas">
+  <div class="mark">
+    <svg width="176" height="176" viewBox="16 16 76 76" xmlns="http://www.w3.org/2000/svg">
+      <path fill="#5BD08A" d="M27,52 h54 a2,2 0 0 1 2,2 v2 a27,27 0 0 1 -27,27 h-4 a27,27 0 0 1 -27,-27 v-2 a2,2 0 0 1 2,-2 z"/>
+      <path fill="#5BD08A" d="M22,86 h64 a3,3 0 0 1 0,6 h-64 a3,3 0 0 1 0,-6 z"/>
+      <path fill="#3AA870" d="M46,26 c0,6 -6,6 -6,12 c0,6 6,6 6,12 h5 c0,-6 -6,-6 -6,-12 c0,-6 6,-6 6,-12 z"/>
+      <path fill="#3AA870" d="M62,26 c0,6 -6,6 -6,12 c0,6 6,6 6,12 h5 c0,-6 -6,-6 -6,-12 c0,-6 6,-6 6,-12 z"/>
+    </svg>
+  </div>
+  <div>
+    <h1>Glucarb</h1>
+    <p>Log the carbs in a meal in seconds.<br>Your catalog, your phone, no account.</p>
+    <div class="rule"></div>
+  </div>
+</div>
+</body>
+</html>

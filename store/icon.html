@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8">
+<style>
+  html, body { margin: 0; padding: 0; background: #12141A; }
+  svg { display: block; }
+</style>
+</head>
+<body>
+<!--
+  Play Store listing icon, 512x512.
+
+  Rendered from the same path data as app/src/main/res/drawable/ic_launcher_foreground.xml
+  so the store icon and the launcher icon can never drift apart.
+
+  The adaptive icon's canvas is 108x108 but launchers only ever show the central 72x72,
+  so rendering the full canvas here would make the mark look far smaller in the store
+  than it does on the phone. The viewBox below crops to 84x84 - a little wider than the
+  mask, which keeps a comfortable margin inside Play's rounded corners while still
+  matching the on-device proportions closely.
+-->
+<svg width="512" height="512" viewBox="12 12 84 84" xmlns="http://www.w3.org/2000/svg">
+  <rect x="12" y="12" width="84" height="84" fill="#12141A"/>
+  <path fill="#5BD08A" d="M27,52 h54 a2,2 0 0 1 2,2 v2 a27,27 0 0 1 -27,27 h-4 a27,27 0 0 1 -27,-27 v-2 a2,2 0 0 1 2,-2 z"/>
+  <path fill="#5BD08A" d="M22,86 h64 a3,3 0 0 1 0,6 h-64 a3,3 0 0 1 0,-6 z"/>
+  <path fill="#3AA870" d="M46,26 c0,6 -6,6 -6,12 c0,6 6,6 6,12 h5 c0,-6 -6,-6 -6,-12 c0,-6 6,-6 6,-12 z"/>
+  <path fill="#3AA870" d="M62,26 c0,6 -6,6 -6,12 c0,6 6,6 6,12 h5 c0,-6 -6,-6 -6,-12 c0,-6 6,-6 6,-12 z"/>
+</svg>
+</body>
+</html>

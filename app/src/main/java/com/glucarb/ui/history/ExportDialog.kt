@@ -71,8 +71,9 @@ fun ExportDialog(
         text = {
             Column {
                 Text(
-                    "A CSV file with one row per meal \u2014 the time and the grams of " +
-                        "carbs \u2014 ready to hand to an assistant for analysis.",
+                    "A CSV file with one row per item eaten \u2014 meal time, item, grams " +
+                        "of carbs and whether it was approximate \u2014 ready to hand to an " +
+                        "assistant for analysis.",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )

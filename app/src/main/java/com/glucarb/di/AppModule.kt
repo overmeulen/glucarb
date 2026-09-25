@@ -26,7 +26,7 @@ object AppModule {
     @Singleton
     fun database(@ApplicationContext context: Context): CarbDatabase =
         Room.databaseBuilder(context, CarbDatabase::class.java, CarbDatabase.NAME)
-            .addMigrations(CarbDatabase.MIGRATION_1_2)
+            .addMigrations(CarbDatabase.MIGRATION_1_2, CarbDatabase.MIGRATION_2_3)
             .build()
 
     @Provides

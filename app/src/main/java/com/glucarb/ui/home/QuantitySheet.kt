@@ -41,6 +41,7 @@ fun QuantitySheet(
     onKey: (String) -> Unit,
     onChip: (Double) -> Unit,
     onToggleMode: () -> Unit,
+    onToggleApproximate: () -> Unit,
     onCommit: () -> Unit,
     onDismiss: () -> Unit,
     onDelete: (() -> Unit)? = null,
@@ -140,6 +141,23 @@ fun QuantitySheet(
             Keypad(
                 keys = if (state.asPortions) KEYS_PORTION else KEYS_PLAIN,
                 onKey = onKey,
+            )
+
+            // Beside the commit, not in a menu: flipping it is the only extra tap an
+            // approximate entry costs, and an item's default usually saves even that.
+            QuantityChip(
+                text = if (state.approximate) "\u2248 Approximate" else "Approximate?",
+                selected = state.approximate,
+                onClick = onToggleApproximate,
+                modifier = Modifier
+                    .padding(top = 12.dp)
+                    .semantics {
+                        contentDescription = if (state.approximate) {
+                            "Marked approximate, tap to mark exact"
+                        } else {
+                            "Exact, tap to mark approximate"
+                        }
+                    },
             )
 
             Row(

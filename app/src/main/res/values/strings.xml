@@ -1,3 +1,4 @@
 <resources>
     <string name="app_name">Glucarb</string>
+    <string name="share_target_label">Glucarb item photo</string>
 </resources>

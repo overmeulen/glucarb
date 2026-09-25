@@ -61,6 +61,7 @@ class MealRepository(
         item: FoodItem,
         input: Double,
         asPortions: Boolean,
+        approximate: Boolean = item.approximateByDefault,
         now: Long = System.currentTimeMillis(),
     ): Long {
         val resolved = CarbMath.resolve(item, input, asPortions)
@@ -77,6 +78,7 @@ class MealRepository(
                 enteredAsPortions = resolved.enteredAsPortions,
                 portionsValue = resolved.portionsValue,
                 carbs = resolved.carbs,
+                approximate = approximate,
                 createdAt = now,
             )
         )
@@ -100,6 +102,7 @@ class MealRepository(
                 unit = MeasurementUnit.G,
                 carbs = 0.0,
                 aiPending = true,
+                approximate = true,
                 createdAt = now,
             )
         )
@@ -113,13 +116,22 @@ class MealRepository(
             entry.copy(
                 carbs = carbs,
                 aiPending = false,
+                // An AI figure is a guess by definition; this is not the user's call.
+                approximate = true,
                 label = label?.takeIf { it.isNotBlank() } ?: entry.label,
             )
         )
         dao.touchMeal(entry.mealId, System.currentTimeMillis())
     }
 
-    suspend fun updateEntryQuantity(entryId: Long, item: FoodItem?, input: Double, asPortions: Boolean) {
+    /** [approximate] null leaves the entry's flag as it is. Ad-hoc entries stay approximate. */
+    suspend fun updateEntryQuantity(
+        entryId: Long,
+        item: FoodItem?,
+        input: Double,
+        asPortions: Boolean,
+        approximate: Boolean? = null,
+    ) {
         val entry = dao.getEntry(entryId) ?: return
         val updated = if (item != null) {
             val resolved = CarbMath.resolve(item, input, asPortions)
@@ -128,10 +140,11 @@ class MealRepository(
                 enteredAsPortions = resolved.enteredAsPortions,
                 portionsValue = resolved.portionsValue,
                 carbs = resolved.carbs,
+                approximate = approximate ?: entry.approximate,
             )
         } else {
             // Ad-hoc entry: the typed value *is* the carb figure.
-            entry.copy(carbs = input, aiPending = false)
+            entry.copy(carbs = input, aiPending = false, approximate = true)
         }
         dao.updateEntry(updated)
     }

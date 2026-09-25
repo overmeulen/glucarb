@@ -192,7 +192,11 @@ private fun MealCard(meal: MealWithEntries, onEntryClick: (MealEntry) -> Unit) {
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.weight(1f),
             )
-            Text(CarbMath.formatCarbs(meal.totalCarbs), fontSize = 18.sp, fontWeight = FontWeight.Bold)
+            Text(
+                CarbMath.formatCarbs(meal.totalCarbs, meal.isApproximate),
+                fontSize = 18.sp,
+                fontWeight = FontWeight.Bold,
+            )
             Text(
                 " g",
                 style = MaterialTheme.typography.bodySmall,
@@ -214,7 +218,8 @@ private fun MealCard(meal: MealWithEntries, onEntryClick: (MealEntry) -> Unit) {
                         modifier = Modifier.weight(1f),
                     )
                     Text(
-                        if (entry.aiPending) "pending" else "${CarbMath.formatCarbs(entry.carbs)} g",
+                        if (entry.aiPending) "pending"
+                        else "${CarbMath.formatCarbs(entry.carbs, entry.approximate)} g",
                         style = MaterialTheme.typography.bodySmall,
                         color = if (entry.aiPending) MaterialTheme.colorScheme.tertiary
                         else MaterialTheme.colorScheme.primary,

@@ -21,6 +21,12 @@ data class FoodItem(
     /** Singular name of a portion, e.g. "slice". */
     val portionLabel: String? = null,
     @ColumnInfo(defaultValue = "0") val archived: Boolean = false,
+    /**
+     * Pre-sets the "approximate" flag when this item is logged. For things whose carbs are
+     * never really known - a restaurant dish, a homemade cake - so the user does not have to
+     * remember to flag them every time. Only a default: each entry can still be changed.
+     */
+    @ColumnInfo(defaultValue = "0") val approximateByDefault: Boolean = false,
     val createdAt: Long = System.currentTimeMillis(),
 ) {
     /** True when the item is usable in portion mode (toggle enabled *and* a valid size). */

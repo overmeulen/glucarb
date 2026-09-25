@@ -35,38 +35,83 @@ class MealCsvExportTest {
         mealId: Long,
         carbs: Double,
         aiPending: Boolean = false,
+        label: String = "Food $id",
+        approximate: Boolean = false,
+        createdAt: Long = mealId,
     ) = MealEntry(
         id = id,
         mealId = mealId,
         foodItemId = 7L,
-        label = "Food $id",
+        label = label,
         quantity = 100.0,
         unit = MeasurementUnit.G,
         carbs = carbs,
         aiPending = aiPending,
-        createdAt = mealId,
+        approximate = approximate,
+        createdAt = createdAt,
     )
 
     private fun lines(csv: String) = csv.trim().lines()
 
     @Test
-    fun `the file is two columns and nothing else`() {
-        assertEquals("meal_time,carbs_g", MealCsvExport.build(emptyList(), paris).trim())
+    fun `the header names the four columns`() {
+        assertEquals(
+            "meal_time,item,carbs_g,approximate",
+            MealCsvExport.build(emptyList(), paris).trim(),
+        )
     }
 
     @Test
-    fun `one row per meal, carrying the local time and the total`() {
+    fun `one row per item, each carrying its meal's local time`() {
         val csv = MealCsvExport.build(
             listOf(
                 meal(
                     3, noon, noon + 600_000,
-                    listOf(entry(1, 3, 48.0), entry(2, 3, 21.0)),
+                    listOf(
+                        entry(1, 3, 48.0, label = "Pasta"),
+                        entry(2, 3, 21.0, label = "Apple juice", approximate = true),
+                    ),
                 ),
             ),
             paris,
         )
-        assertEquals(2, lines(csv).size)
-        assertEquals("2026-09-02T12:30:00+02:00,69", lines(csv)[1])
+        assertEquals(
+            listOf(
+                "meal_time,item,carbs_g,approximate",
+                "2026-09-02T12:30:00+02:00,Pasta,48,false",
+                "2026-09-02T12:30:00+02:00,Apple juice,21,true",
+            ),
+            lines(csv),
+        )
+    }
+
+    @Test
+    fun `items keep the order they were logged in`() {
+        val csv = MealCsvExport.build(
+            listOf(
+                meal(
+                    1, noon, null,
+                    listOf(
+                        entry(5, 1, 1.0, label = "Second", createdAt = noon + 60_000),
+                        entry(9, 1, 1.0, label = "First", createdAt = noon),
+                    ),
+                ),
+            ),
+            paris,
+        )
+        assertEquals(listOf("First", "Second"), lines(csv).drop(1).map { it.split(",")[1] })
+    }
+
+    @Test
+    fun `names with commas or quotes are quoted, not split`() {
+        val csv = MealCsvExport.build(
+            listOf(meal(1, noon, null, listOf(entry(1, 1, 30.0, label = "Rice, \"basmati\"")))),
+            paris,
+        )
+        assertEquals(
+            "2026-09-02T12:30:00+02:00,\"Rice, \"\"basmati\"\"\",30,false",
+            lines(csv)[1],
+        )
     }
 
     @Test
@@ -75,11 +120,11 @@ class MealCsvExportTest {
             listOf(meal(1, noon, closedAt = null, entries = listOf(entry(1, 1, 30.0)))),
             paris,
         )
-        assertEquals("2026-09-02T12:30:00+02:00,30", lines(csv)[1])
+        assertEquals("2026-09-02T12:30:00+02:00,Food 1,30,false", lines(csv)[1])
     }
 
     @Test
-    fun `unanswered AI estimates do not count toward the total`() {
+    fun `unanswered AI estimates are left out`() {
         val csv = MealCsvExport.build(
             listOf(
                 meal(
@@ -89,7 +134,8 @@ class MealCsvExportTest {
             ),
             paris,
         )
-        assertEquals("2026-09-02T12:30:00+02:00,30", lines(csv)[1])
+        assertEquals(2, lines(csv).size)
+        assertEquals("2026-09-02T12:30:00+02:00,Food 1,30,false", lines(csv)[1])
     }
 
     @Test
@@ -113,16 +159,16 @@ class MealCsvExportTest {
             ),
             paris,
         )
-        assertEquals(listOf("1", "5"), lines(csv).drop(1).map { it.split(",")[1] })
+        assertEquals(listOf("1", "5"), lines(csv).drop(1).map { it.split(",")[2] })
     }
 
     @Test
-    fun `carbs keep a decimal so summed meals do not drift`() {
+    fun `carbs keep a decimal so summed items do not drift`() {
         val csv = MealCsvExport.build(
             listOf(meal(1, noon, null, listOf(entry(1, 1, 10.4)))),
             paris,
         )
-        assertEquals("10.4", lines(csv)[1].split(",")[1])
+        assertEquals("10.4", lines(csv)[1].split(",")[2])
     }
 
     @Test

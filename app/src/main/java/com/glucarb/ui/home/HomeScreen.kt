@@ -205,6 +205,7 @@ fun HomeScreen(
 
             MealPanel(
                 carbs = state.mealCarbs,
+                approximate = state.meal?.isApproximate == true,
                 entries = state.meal?.entries.orEmpty(),
                 onEntryClick = viewModel::openSheetForEntry,
                 onHistory = onOpenHistory,
@@ -268,6 +269,7 @@ fun HomeScreen(
             onKey = viewModel::onKey,
             onChip = viewModel::setSheetValue,
             onToggleMode = viewModel::togglePortionMode,
+            onToggleApproximate = viewModel::toggleApproximate,
             onCommit = viewModel::commitSheet,
             onDismiss = viewModel::dismissSheet,
             onDelete = s.editingEntryId?.let {
@@ -313,6 +315,7 @@ fun HomeScreen(
 @Composable
 private fun MealPanel(
     carbs: Double,
+    approximate: Boolean,
     entries: List<MealEntry>,
     onEntryClick: (MealEntry) -> Unit,
     onHistory: () -> Unit,
@@ -344,11 +347,13 @@ private fun MealPanel(
         Row(verticalAlignment = Alignment.CenterVertically) {
             Column(
                 Modifier.semantics {
-                    contentDescription = "Current meal: ${CarbMath.formatCarbs(carbs)} grams of carbs"
+                    contentDescription = "Current meal: " +
+                        (if (approximate) "about " else "") +
+                        "${CarbMath.formatCarbs(carbs)} grams of carbs"
                 }
             ) {
                 Text(
-                    CarbMath.formatCarbs(carbs),
+                    CarbMath.formatCarbs(carbs, approximate),
                     fontSize = 64.sp,
                     lineHeight = 66.sp,
                     fontWeight = FontWeight.Bold,
@@ -409,7 +414,7 @@ private fun MealEntryChip(entry: MealEntry, onClick: () -> Unit) {
             modifier = Modifier.weight(1f, fill = false),
         )
         Text(
-            text = if (pending) " \u2026" else "  ${CarbMath.formatCarbs(entry.carbs)}",
+            text = if (pending) " \u2026" else "  ${CarbMath.formatCarbs(entry.carbs, entry.approximate)}",
             fontSize = 12.sp,
             fontWeight = FontWeight.Bold,
             maxLines = 1,

@@ -57,6 +57,13 @@ For things that are naturally counted rather than weighed - slices of bread, bis
 squares of chocolate - mark the item as available in portions and give the weight of one
 portion. You can then log "3 slices" instead of reaching for the scales.
 
+No photo to hand? Search the web from the item screen, then share the picture you like
+back to Glucarb.
+
+Not every figure is exact, and Glucarb lets you say so. Any food can be logged as
+approximate - foods you can only ever guess, like a restaurant dish, can be set to
+approximate by default - and a meal containing one shows its total with a "~".
+
 
 BUILT FOR SPEED
 
@@ -82,11 +89,13 @@ nothing is sent anywhere unless you tap that button.
 HISTORY AND EXPORT
 
 Every meal is kept with its date and time. When you want to look at the bigger picture,
-export your history from any starting date as a plain CSV file with two columns: when
-the meal was, and how many grams of carbohydrate it contained.
+export your history from any starting date as a plain CSV file with one line per food
+eaten: when the meal was, what the food was, how many grams of carbohydrate it
+contained, and whether that figure was an approximation.
 
-That format is deliberately minimal. It opens in any spreadsheet, and it is simple
-enough to hand to an AI assistant and ask questions about it in plain language.
+That format is deliberately simple. It opens in any spreadsheet, and it is easy to hand
+to an AI assistant and ask questions about it in plain language - including how
+different foods compare.
 
 
 PRIVATE BY CONSTRUCTION, NOT BY PROMISE

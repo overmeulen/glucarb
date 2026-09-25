@@ -8,6 +8,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -70,6 +71,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.glucarb.data.MeasurementUnit
 import com.glucarb.domain.FoodIcon
 import com.glucarb.domain.FoodIcons
+import com.glucarb.domain.WebImageSearch
 import com.glucarb.ui.common.ItemAvatar
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -105,6 +107,14 @@ fun ItemEditScreen(
     val snackbar = remember { SnackbarHostState() }
 
     LaunchedEffect(state.saved) { if (state.saved) onDone() }
+
+    // An image shared in - normally the round trip from the "Web" button - becomes this
+    // item's photo, exactly as if it had been picked from the gallery.
+    val sharedPhoto by com.glucarb.ui.SharedPhotoInbox.pending.collectAsStateWithLifecycle()
+    LaunchedEffect(sharedPhoto) {
+        if (sharedPhoto != null) com.glucarb.ui.SharedPhotoInbox.take()?.let(viewModel::pickPhoto)
+    }
+    val context = androidx.compose.ui.platform.LocalContext.current
 
     LaunchedEffect(Unit) {
         viewModel.errors.collect {
@@ -174,6 +184,27 @@ fun ItemEditScreen(
                     cameraLauncher.launch(uri)
                 },
                 onPickPhoto = { galleryLauncher.launch("image/*") },
+                onSearchWeb = {
+                    val opened = runCatching {
+                        context.startActivity(
+                            android.content.Intent(
+                                android.content.Intent.ACTION_VIEW,
+                                android.net.Uri.parse(WebImageSearch.urlFor(state.name)),
+                            ).addCategory(android.content.Intent.CATEGORY_BROWSABLE),
+                        )
+                    }.isSuccess
+                    if (opened) {
+                        // A toast, not a snackbar: it has to be read on top of the browser,
+                        // which is where the user needs to know how to send the picture back.
+                        android.widget.Toast.makeText(
+                            context,
+                            "Long-press a picture, then Share \u2192 Glucarb",
+                            android.widget.Toast.LENGTH_LONG,
+                        ).show()
+                    } else {
+                        viewModel.reportError("No browser found to search with")
+                    }
+                },
                 onClear = {
                     if (state.photoPath != null) viewModel.clearPhoto() else viewModel.setEmoji(null)
                 },
@@ -249,6 +280,29 @@ fun ItemEditScreen(
                 }
             }
 
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 12.dp)
+                    .clip(RoundedCornerShape(12.dp))
+                    .border(1.dp, MaterialTheme.colorScheme.outline, RoundedCornerShape(12.dp))
+                    .padding(horizontal = 14.dp, vertical = 10.dp),
+            ) {
+                Column(Modifier.weight(1f)) {
+                    Text("Approximate by default")
+                    Text(
+                        "For foods you can only guess, like restaurant dishes",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+                Switch(
+                    checked = state.approximateByDefault,
+                    onCheckedChange = viewModel::setApproximateByDefault,
+                )
+            }
+
             if (state.id != 0L) {
                 TextButton(
                     onClick = viewModel::archive,
@@ -285,6 +339,7 @@ fun ItemEditScreen(
  * Suggestions are the fast path and stay visible without being asked for; a photo and the full
  * icon list are one tap away behind the buttons.
  */
+@OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
 @Composable
 private fun IdentityPicker(
     state: ItemEditState,
@@ -292,6 +347,7 @@ private fun IdentityPicker(
     onBrowse: () -> Unit,
     onTakePhoto: () -> Unit,
     onPickPhoto: () -> Unit,
+    onSearchWeb: () -> Unit,
     onClear: () -> Unit,
 ) {
     Row(
@@ -333,12 +389,15 @@ private fun IdentityPicker(
                     }
                 }
             }
-            Row(horizontalArrangement = Arrangement.spacedBy(2.dp)) {
+            // FlowRow: five labels no longer fit beside the preview on a 360dp phone, and
+            // a clipped "Clear" is worse than a second line.
+            FlowRow(horizontalArrangement = Arrangement.spacedBy(2.dp)) {
                 CompactTextButton("Icons", onBrowse)
                 // Camera first: an item is almost always created with the food in front of you,
                 // so picking from the gallery is the exception, not the normal path.
                 CompactTextButton("Camera", onTakePhoto)
                 CompactTextButton("Gallery", onPickPhoto)
+                CompactTextButton("Web", onSearchWeb)
                 if (state.photoPath != null || state.emoji != null) {
                     CompactTextButton("Clear", onClear)
                 }

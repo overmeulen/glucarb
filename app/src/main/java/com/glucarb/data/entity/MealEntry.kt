@@ -1,5 +1,6 @@
 package com.glucarb.data.entity
 
+import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.ForeignKey
 import androidx.room.Index
@@ -49,6 +50,12 @@ data class MealEntry(
     val carbs: Double,
     /** True while an AI estimate has been sent out but not yet confirmed. */
     val aiPending: Boolean = false,
+    /**
+     * The carb figure is a guess rather than a weighed, labelled amount. A marker only: it
+     * never changes the numbers. Snapshotted like the rest of the row, so later changing an
+     * item's default does not rewrite what past meals said. AI estimates always carry it.
+     */
+    @ColumnInfo(defaultValue = "0") val approximate: Boolean = false,
     val createdAt: Long = System.currentTimeMillis(),
 ) {
     val isAdHoc: Boolean get() = foodItemId == null

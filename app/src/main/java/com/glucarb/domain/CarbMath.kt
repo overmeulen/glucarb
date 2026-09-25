@@ -81,4 +81,8 @@ object CarbMath {
 
     /** Carb totals are displayed as whole grams: that is the precision insulin dosing uses. */
     fun formatCarbs(value: Double): String = format(value, 0)
+
+    /** "~" rather than "\u2248": it reads at a glance at every size the app prints totals. */
+    fun formatCarbs(value: Double, approximate: Boolean): String =
+        if (approximate) "~" + formatCarbs(value) else formatCarbs(value)
 }

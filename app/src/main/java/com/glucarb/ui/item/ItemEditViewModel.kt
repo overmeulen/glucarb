@@ -36,6 +36,7 @@ data class ItemEditState(
     val portionEnabled: Boolean = false,
     val portionLabel: String = "portion",
     val portionSize: String = "",
+    val approximateByDefault: Boolean = false,
     val originalPhotoPath: String? = null,
     val saved: Boolean = false,
 ) {
@@ -104,6 +105,7 @@ class ItemEditViewModel @Inject constructor(
                         portionEnabled = item.portionEnabled,
                         portionLabel = item.portionLabel ?: "portion",
                         portionSize = item.portionSize?.let { CarbMath.format(it, 2) } ?: "",
+                        approximateByDefault = item.approximateByDefault,
                     )
                 }
             }
@@ -121,6 +123,14 @@ class ItemEditViewModel @Inject constructor(
 
     fun setPortionEnabled(enabled: Boolean) {
         _state.value = _state.value.copy(portionEnabled = enabled)
+    }
+
+    fun setApproximateByDefault(enabled: Boolean) {
+        _state.value = _state.value.copy(approximateByDefault = enabled)
+    }
+
+    fun reportError(message: String) {
+        viewModelScope.launch { _errors.send(message) }
     }
 
     /** Chooses an icon explicitly. A photo would hide it, so the two are mutually exclusive. */
@@ -210,6 +220,7 @@ class ItemEditViewModel @Inject constructor(
                 portionEnabled = s.portionEnabled,
                 portionSize = if (s.portionEnabled) s.portionValue else null,
                 portionLabel = if (s.portionEnabled) s.portionLabel.trim().ifBlank { "portion" } else null,
+                approximateByDefault = s.approximateByDefault,
             )
             val savedId = repo.save(item)
             // A saved edit is a correction, and the meal being assembled right now must

@@ -17,6 +17,9 @@ data class MealWithEntries(
     val entries: List<MealEntry>,
 ) {
     val totalCarbs: Double get() = entries.filterNot { it.aiPending }.sumOf { it.carbs }
+
+    /** A total is only as exact as its least exact counted part. */
+    val isApproximate: Boolean get() = entries.any { !it.aiPending && it.approximate }
 }
 
 /** Aggregated usage of one item within one hour-of-day bucket. Drives home ranking. */

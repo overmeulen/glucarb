@@ -40,8 +40,11 @@ data class QuantitySheetState(
      * calculator does and what "100" -> tap 5 -> "5" needs to mean.
      */
     val pristine: Boolean = true,
+    /** Starts from the item's default (or the entry being edited); the chip overrides it. */
+    val approximate: Boolean = item.approximateByDefault,
 ) {
     val value: Double get() = input.toDoubleOrNull() ?: 0.0
+
 
     val quantity: Double
         get() = if (asPortions) CarbMath.portionsToQuantity(value, item.portionSize) else value
@@ -94,6 +97,9 @@ class HomeViewModel @Inject constructor(
 ) : ViewModel() {
 
     private val query = MutableStateFlow("")
+
+    /** The search text on its own, without waiting for the catalog, meal and settings. */
+    val searchQuery: StateFlow<String> = query
 
     private val _sheet = MutableStateFlow<QuantitySheetState?>(null)
     val sheet: StateFlow<QuantitySheetState?> = _sheet
@@ -196,6 +202,7 @@ class HomeViewModel @Inject constructor(
                 asPortions = asPortions,
                 input = CarbMath.format(initial, 2),
                 chips = chipsFor(item, asPortions),
+                approximate = entry.approximate,
             )
         }
     }
@@ -288,6 +295,11 @@ class HomeViewModel @Inject constructor(
         }
     }
 
+    fun toggleApproximate() {
+        val current = _sheet.value ?: return
+        _sheet.value = current.copy(approximate = !current.approximate)
+    }
+
     fun dismissSheet() {
         _sheet.value = null
     }
@@ -304,9 +316,15 @@ class HomeViewModel @Inject constructor(
             if (state.editingEntryId != null) {
                 mealRepo.updateEntryQuantity(
                     state.editingEntryId, state.item, state.value, state.asPortions,
+                    approximate = state.approximate,
                 )
             } else {
-                val id = mealRepo.addCatalogEntry(state.item, state.value, state.asPortions)
+                // Cleared only on an actual add: dismissing a wrong pick keeps the search,
+                // so the right result is still one tap away.
+                query.value = ""
+                val id = mealRepo.addCatalogEntry(
+                    state.item, state.value, state.asPortions, approximate = state.approximate,
+                )
                 _events.send(HomeEvent.EntryAdded(state.item.name, state.carbs, id))
             }
         }

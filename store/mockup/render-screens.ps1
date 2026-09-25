@@ -74,7 +74,7 @@ for ($k = 0; $k -lt $captions.Count; $k++) {
     $i = $indices[$k]
     $label = $captions[$k] `
         -replace '<[^>]+>', '' `
-        -replace '&middot;|&mdash;|&rarr;|&amp;', ' ' `
+        -replace '&[a-zA-Z]+;|&#\d+;', ' ' `
         -replace '[^A-Za-z0-9]+', '-' `
         -replace '(^-+|-+$)', ''
     $name = 'screen-{0:d2}-{1}.png' -f ($k + 1), $label.ToLower()

@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="utf-8">
@@ -174,18 +174,36 @@ h1{font-size:20px;font-weight:600;margin-bottom:4px}
 .empty .s{font-size:12px;color:var(--dim);line-height:1.5}
 .note{max-width:1000px;margin-top:26px;padding:16px 18px;background:var(--surface);border:1px solid var(--line);border-radius:14px;font-size:13px;color:var(--dim);line-height:1.7}
 .note b{color:var(--txt)}
+.approx{display:inline-block;background:var(--surface2);border:1px solid var(--line);border-radius:18px;padding:6px 12px;font-size:12px;margin:0 0 10px}
+.approx.on{background:rgba(91,208,138,.16);border-color:var(--acc);color:var(--acc);font-weight:600}
+.new{outline:2px dashed rgba(91,208,138,.75);outline-offset:3px;border-radius:12px}
+.knob.off{background:var(--line)}
+.knob.off:after{right:auto;left:2.5px}
+.browser{background:#f2f3f5;color:#202124;flex:1;display:flex;flex-direction:column;position:relative}
+.burl{margin:6px 10px;background:#fff;border-radius:18px;padding:7px 12px;font-size:11px;color:#5f6368;border:1px solid #dadce0}
+.bgrid{display:grid;grid-template-columns:1fr 1fr;gap:6px;padding:4px 10px}
+.bimg{aspect-ratio:1;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:44px;background:#e1e4e8}
+.bmenu{position:absolute;left:34px;right:34px;top:210px;background:#fff;border-radius:12px;box-shadow:0 10px 30px rgba(0,0,0,.35);padding:6px 0;font-size:13px;z-index:6}
+.bmenu div{padding:10px 16px}
+.bmenu .hl{background:#e8f0fe;font-weight:600}
+.toast{position:absolute;left:30px;right:30px;bottom:26px;background:#3c4043;color:#fff;border-radius:18px;padding:9px 12px;font-size:11px;text-align:center;z-index:7}
+.shares{position:absolute;left:0;right:0;bottom:0;background:#fff;border-radius:18px 18px 0 0;padding:14px 12px 20px;z-index:8;box-shadow:0 -6px 24px rgba(0,0,0,.3)}
+.shares .row{display:flex;justify-content:space-around;margin-top:12px}
+.shares .app{display:flex;flex-direction:column;align-items:center;gap:5px;font-size:10px;color:#3c4043;width:60px;text-align:center}
+.shares .ico{width:42px;height:42px;border-radius:12px;background:#e1e4e8;display:flex;align-items:center;justify-content:center;font-size:20px}
+.shares .app.hl .ico{background:#12141a;color:#5bd08a;outline:3px solid #5bd08a}
 kbd{background:var(--surface2);border:1px solid var(--line);border-radius:5px;padding:1px 6px;font-size:11px;color:var(--acc)}
 </style>
 </head>
 <body>
 
 <h1>Glucarb &mdash; visual mockup</h1>
-<div class="sub">Static mockup of the agreed design. Scroll the row sideways &rarr;</div>
+<div class="sub">Static mockup of the agreed design. Scroll the row sideways &rarr; &nbsp;<span style="color:var(--acc)">Dashed green outline = new in 1.1</span></div>
 
 <div class="rail">
 
 <div class="screen">
-  <div class="cap"><b>1</b> &middot; Home &mdash; grid</div>
+  <div class="cap"><b>1</b> &middot; Home &mdash; one guess makes the total ~</div>
   <div class="phone">
     <div class="status"><span>9:41</span><span>&#9650; 87%</span></div>
     <div class="hero">
@@ -194,11 +212,11 @@ kbd{background:var(--surface2);border:1px solid var(--line);border-radius:5px;pa
         <div class="ic2">&#8635;</div><div class="ic2">&#9881;</div>
       </div>
       <div class="band">
-        <div class="tot"><div class="big">47</div><div class="un">g carbs</div></div>
+        <div class="tot new"><div class="big"><span style="font-size:.55em;vertical-align:.25em">~</span>47</div><div class="un">g carbs</div></div>
         <div class="mealgrid">
           <div class="chipm"><span>&#127838; Bread</span><b>28</b></div>
           <div class="chipm"><span>&#129371; Milk</span><b>10</b></div>
-          <div class="chipm"><span>&#127822; Apple</span><b>9</b></div>
+          <div class="chipm new" style="outline-offset:0"><span>&#129383; Pie</span><b>~9</b></div>
         </div>
       </div>
     </div>
@@ -227,7 +245,7 @@ kbd{background:var(--surface2);border:1px solid var(--line);border-radius:5px;pa
 </div>
 
 <div class="screen">
-  <div class="cap"><b>2</b> &middot; Tap tile &rarr; quantity (a chip adds at once)</div>
+  <div class="cap"><b>2</b> &middot; Quantity &mdash; tap &ldquo;Approximate?&rdquo; to flag it</div>
   <div class="phone">
     <div class="status"><span>9:41</span><span>&#9650; 87%</span></div>
     <div class="hero">
@@ -263,13 +281,14 @@ kbd{background:var(--surface2);border:1px solid var(--line);border-radius:5px;pa
       <div class="chips">
         <div class="chip on">150 g</div><div class="chip">200 g</div>
       </div>
-      <div class="pad">
+      <div class="pad" style="margin-bottom:10px">
         <div class="key">1</div><div class="key">2</div><div class="key">3</div>
         <div class="key">4</div><div class="key">5</div><div class="key">6</div>
         <div class="key">7</div><div class="key">8</div><div class="key">9</div>
         <div class="key f">.</div><div class="key">0</div><div class="key f">&#9003;</div>
       </div>
-      <div class="cta"><div class="btn">Add to meal</div><div class="btn ghost">&#10005;</div></div>
+      <div class="approx new">Approximate?</div>
+      <div class="cta"><div class="btn">Add to meal</div></div>
     </div>
   </div>
 </div>
@@ -299,7 +318,7 @@ kbd{background:var(--surface2);border:1px solid var(--line);border-radius:5px;pa
       <div class="tile"><div class="em">&#127834;</div><div class="nm">Rice</div></div>
     </div></div>
     <div class="scrim"></div>
-    <div class="sheet" style="padding-bottom:74px">
+    <div class="sheet" style="padding-bottom:74px;padding-top:8px">
       <div class="grab"></div>
       <div class="sh-head">
         <div class="th">&#127838;</div>
@@ -319,7 +338,8 @@ kbd{background:var(--surface2);border:1px solid var(--line);border-radius:5px;pa
         <div class="key">7</div><div class="key">8</div><div class="key">9</div>
         <div class="key f">.5</div><div class="key">0</div><div class="key f">&#9003;</div>
       </div>
-      <div class="cta"><div class="btn">Add to meal</div><div class="btn ghost">&#10005;</div></div>
+      <div class="approx">Approximate?</div>
+      <div class="cta"><div class="btn">Add to meal</div></div>
     </div>
     <div class="snack">Added Wholemeal bread &middot; 21 g <b>Undo</b></div>
   </div>
@@ -379,7 +399,7 @@ kbd{background:var(--surface2);border:1px solid var(--line);border-radius:5px;pa
             <div class="sc">&#129374;</div>
             <div class="sc">&#127834;</div>
           </div>
-          <div class="idbtns"><span>Icons</span><span>Camera</span><span>Gallery</span><span>Clear</span></div>
+          <div class="idbtns" style="flex-wrap:wrap"><span>Icons</span><span>Camera</span><span>Gallery</span><span class="new" style="border-radius:6px">Web</span><span>Clear</span></div>
         </div>
       </div>
       <div class="hint">The icon follows the name as you type. &#127838; was applied on its own &mdash; the rest of the row is the same food family, one tap away.</div>
@@ -432,6 +452,84 @@ kbd{background:var(--surface2);border:1px solid var(--line);border-radius:5px;pa
 </div>
 
 <div class="screen">
+  <div class="cap"><b>5c</b> &middot; A food you can only guess</div>
+  <div class="phone">
+    <div class="status"><span>9:41</span><span>&#9650; 87%</span></div>
+    <div class="top"><span class="x">&#10005;</span> Edit item <span class="save">Save</span></div>
+    <div class="scroll">
+      <div class="field"><label>Name</label><div class="input">Restaurant pizza</div></div>
+      <div class="idrow">
+        <div class="avatar">&#127829;</div>
+        <div style="flex:1;min-width:0">
+          <div class="sugg"><div class="sc on">&#127829;</div><div class="sc">&#129366;</div><div class="sc">&#129747;</div></div>
+          <div class="idbtns" style="flex-wrap:wrap"><span>Icons</span><span>Camera</span><span>Gallery</span><span>Web</span><span>Clear</span></div>
+        </div>
+      </div>
+      <div style="height:10px"></div>
+      <div class="field"><label>Measurement unit</label>
+        <div class="seg" style="width:100%;margin-bottom:0"><div class="on">Grams (g)</div><div>Millilitres (ml)</div></div>
+      </div>
+      <div style="height:12px"></div>
+      <div class="field"><label>Carbs per 100 g</label><div class="input">30</div></div>
+      <div class="sw"><div><div class="k">Available in portions</div><div class="d">Slices, units, spoons&hellip;</div></div><div class="knob off"></div></div>
+      <div class="sw new"><div><div class="k">Approximate by default</div><div class="d">For foods you can only guess, like restaurant dishes</div></div><div class="knob"></div></div>
+      <div class="hint">Every time this is logged, the quantity sheet opens with <span style="color:var(--acc)">&asymp; Approximate</span> already on. One tap undoes it for a single entry.</div>
+    </div>
+  </div>
+</div>
+
+<div class="screen">
+  <div class="cap"><b>5d</b> &middot; &ldquo;Web&rdquo; &rarr; your browser</div>
+  <div class="phone">
+    <div class="status" style="background:#f2f3f5;color:#5f6368"><span>9:41</span><span>&#9650; 87%</span></div>
+    <div class="browser">
+      <div class="burl">&#128274; google.com/search?tbm=isch&amp;q=Restaurant+pizza</div>
+      <div style="font-size:10px;color:#5f6368;padding:2px 12px 6px">Images &middot; Restaurant pizza</div>
+      <div class="bgrid">
+        <div class="bimg">&#127829;</div><div class="bimg" style="background:#f5d9c4">&#127829;</div>
+        <div class="bimg" style="background:#e8d5b5">&#127829;</div><div class="bimg">&#127829;</div>
+        <div class="bimg" style="background:#f0e0c8">&#127829;</div><div class="bimg">&#127829;</div>
+      </div>
+      <div class="scrim" style="background:rgba(0,0,0,.25)"></div>
+      <div class="bmenu">
+        <div>Open image in new tab</div>
+        <div>Download image</div>
+        <div class="hl">Share image</div>
+        <div>Copy image</div>
+      </div>
+      <div class="toast">Long-press a picture, then Share &rarr; Glucarb</div>
+    </div>
+  </div>
+</div>
+
+<div class="screen">
+  <div class="cap"><b>5e</b> &middot; Share &rarr; Glucarb &rarr; back in the editor</div>
+  <div class="phone">
+    <div class="status" style="background:#f2f3f5;color:#5f6368"><span>9:41</span><span>&#9650; 87%</span></div>
+    <div class="browser">
+      <div class="burl">&#128274; google.com/search?tbm=isch&amp;q=Restaurant+pizza</div>
+      <div class="bgrid" style="opacity:.5">
+        <div class="bimg">&#127829;</div><div class="bimg" style="background:#f5d9c4">&#127829;</div>
+        <div class="bimg" style="background:#e8d5b5">&#127829;</div><div class="bimg">&#127829;</div>
+      </div>
+      <div class="scrim" style="background:rgba(0,0,0,.35)"></div>
+      <div class="shares">
+        <div style="font-size:12px;font-weight:600">Share image</div>
+        <div class="row">
+          <div class="app"><div class="ico">&#9993;</div>Gmail</div>
+          <div class="app"><div class="ico">&#128172;</div>Messages</div>
+          <div class="app hl"><div class="ico">G</div>Glucarb item photo</div>
+          <div class="app"><div class="ico">&#9729;</div>Drive</div>
+        </div>
+        <div style="font-size:10px;color:#5f6368;margin-top:14px;line-height:1.5">
+          The picture lands in the item you were editing. Shared from anywhere else, it starts a new item with that photo. Glucarb itself never goes online.
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="screen">
   <div class="cap"><b>6</b> &middot; AI estimate &mdash; return</div>
   <div class="phone">
     <div class="status"><span>9:41</span><span>&#9650; 87%</span></div>
@@ -456,6 +554,7 @@ kbd{background:var(--surface2);border:1px solid var(--line);border-radius:5px;pa
         <div class="parse">Found a number in your clipboard
           <b>62 g carbs</b>
         </div>
+        <div class="new" style="font-size:10px;color:var(--dim);margin:-2px 0 10px;padding:4px 6px">&asymp; Logged as approximate &mdash; AI estimates always are</div>
         <div class="cta"><div class="btn">Confirm &amp; add</div><div class="btn danger">Discard</div></div>
       </div>
       <div class="sect">Sent to &middot; Gemini</div>
@@ -477,8 +576,8 @@ kbd{background:var(--surface2);border:1px solid var(--line);border-radius:5px;pa
       <div class="daygrp">
         <div class="dayh"><div class="d">Today</div><div class="t">3 meals</div></div>
         <div class="mealcard">
-          <div class="h"><div class="tm">12:34 &middot; open</div><div class="tot">47<span> g</span></div></div>
-          <div class="it">Bread 2 sl &middot; Milk 200 ml &middot; Apple 120 g</div>
+          <div class="h"><div class="tm">12:34 &middot; open</div><div class="tot">~47<span> g</span></div></div>
+          <div class="it">Bread 2 sl &middot; Milk 200 ml &middot; Pie ~9 g</div>
         </div>
         <div class="mealcard">
           <div class="h"><div class="tm">10:15</div><div class="tot">18<span> g</span></div></div>
@@ -492,8 +591,8 @@ kbd{background:var(--surface2);border:1px solid var(--line);border-radius:5px;pa
       <div class="daygrp">
         <div class="dayh"><div class="d">Yesterday</div><div class="t">4 meals</div></div>
         <div class="mealcard">
-          <div class="h"><div class="tm">19:50</div><div class="tot">71<span> g</span></div></div>
-          <div class="it">Pasta 180 g &middot; Bread 1 sl &middot; &#129302; Plate estimate 62 g</div>
+          <div class="h"><div class="tm">19:50</div><div class="tot new" style="padding:0 4px">~71<span> g</span></div></div>
+          <div class="it">Pasta 180 g &middot; Bread 1 sl &middot; &#129302; Plate estimate ~62 g</div>
         </div>
         <div class="mealcard">
           <div class="h"><div class="tm">12:20</div><div class="tot">63<span> g</span></div></div>
@@ -522,7 +621,7 @@ kbd{background:var(--surface2);border:1px solid var(--line);border-radius:5px;pa
     <div class="sheet" style="border-radius:22px;left:14px;right:14px;bottom:auto;top:78px">
       <div style="font-size:15px;font-weight:600;margin-bottom:4px">Export meals</div>
       <div style="font-size:11px;color:var(--dim);line-height:1.5;margin-bottom:8px">
-        A CSV file with one row per meal &mdash; the time and the grams of carbs &mdash; ready to hand to an assistant for analysis.
+        <span class="new" style="display:block;padding:3px 4px">A CSV file with one row per item eaten &mdash; meal time, item, grams of carbs and whether it was approximate &mdash; ready to hand to an assistant for analysis.</span>
       </div>
       <div class="opt"><span class="rad"></span>Last 7 days</div>
       <div class="opt on"><span class="rad"></span>Last 30 days</div>
@@ -544,17 +643,19 @@ kbd{background:var(--surface2);border:1px solid var(--line);border-radius:5px;pa
     <div class="status"><span>9:41</span><span>&#9650; 87%</span></div>
     <div class="top"><span class="x">&lsaquo;</span> Glucarb-meals-from-2026-08-03.csv</div>
     <div class="scroll">
-      <div class="sect">One row per meal</div>
-      <div class="csv"><b>meal_time,carbs_g</b>
+      <div class="sect">One row per item eaten</div>
+      <div class="csv new"><b>meal_time,item,carbs_g,approximate</b>
 
-2026-09-01T07:38:00+02:00,54
-2026-09-01T12:15:00+02:00,63
-2026-09-01T19:50:00+02:00,71
-2026-09-02T07:40:00+02:00,54
-2026-09-02T10:15:00+02:00,18
-2026-09-02T12:34:00+02:00,47</div>
+2026-09-01T19:50:00+02:00,Pasta,57.6,false
+2026-09-01T19:50:00+02:00,Wholemeal bread,14.1,false
+2026-09-01T19:50:00+02:00,Plate estimate,62,true
+2026-09-02T07:40:00+02:00,Wholemeal bread,42.2,false
+2026-09-02T07:40:00+02:00,Orange juice,20.4,false
+2026-09-02T12:34:00+02:00,Wholemeal bread,28.2,false
+2026-09-02T12:34:00+02:00,Milk,10,false
+2026-09-02T12:34:00+02:00,Pie,9,true</div>
       <div style="font-size:10px;color:var(--dim);line-height:1.6;margin-top:10px">
-        &bull; Two columns, nothing else &mdash; when you ate and how many grams of carbs.<br>
+        &bull; Rows with the same time are one meal &mdash; totals are a sum away, and each food keeps its own line.<br>&bull; <b style="color:var(--txt)">approximate</b> says which figures were guesses.<br>&bull; Names with commas are quoted, so the columns never shift.<br>
         &bull; Times carry the local offset, so &ldquo;what about breakfast&rdquo; still works.<br>
         &bull; The meal in progress is included; today is never cut off.<br>
         &bull; AI estimates still waiting for an answer are left out entirely.

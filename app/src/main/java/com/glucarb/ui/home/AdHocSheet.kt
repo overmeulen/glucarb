@@ -1,6 +1,5 @@
 package com.glucarb.ui.home
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -96,13 +95,6 @@ fun AdHocSheet(
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 modifier = Modifier.fillMaxWidth().padding(top = 12.dp),
             ) {
-                Button(
-                    onClick = onCommit,
-                    enabled = (state.input.toDoubleOrNull() ?: 0.0) > 0.0,
-                    modifier = Modifier.weight(1f),
-                ) {
-                    Text("Confirm & add", fontWeight = FontWeight.Bold)
-                }
                 // Same fix as the entry sheet's Delete: a fixed narrow button wrapped the
                 // label onto two lines. Sharing Confirm's shape and taking the error colour
                 // reads as destructive without being cramped.
@@ -116,22 +108,13 @@ fun AdHocSheet(
                 ) {
                     Text("Discard", fontWeight = FontWeight.Bold)
                 }
-            }
-
-            Box(
-                Modifier
-                    .padding(top = 10.dp)
-                    .fillMaxWidth()
-                    .clip(RoundedCornerShape(10.dp))
-                    .background(MaterialTheme.colorScheme.surfaceVariant)
-                    .padding(10.dp)
-            ) {
-                Text(
-                    "Ad-hoc estimates are not added to your catalog, so they never distort " +
-                        "your suggestions.",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
+                Button(
+                    onClick = onCommit,
+                    enabled = (state.input.toDoubleOrNull() ?: 0.0) > 0.0,
+                    modifier = Modifier.weight(1f),
+                ) {
+                    Text("Confirm & add", fontWeight = FontWeight.Bold)
+                }
             }
         }
     }

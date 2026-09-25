@@ -174,6 +174,11 @@ h1{font-size:20px;font-weight:600;margin-bottom:4px}
 .empty .s{font-size:12px;color:var(--dim);line-height:1.5}
 .note{max-width:1000px;margin-top:26px;padding:16px 18px;background:var(--surface);border:1px solid var(--line);border-radius:14px;font-size:13px;color:var(--dim);line-height:1.7}
 .note b{color:var(--txt)}
+.cbx{display:flex;align-items:center;gap:7px;font-size:12px;flex:0 0 auto;padding-right:4px}
+.cbx i{width:16px;height:16px;border-radius:3px;border:2px solid var(--dim);display:inline-block;box-sizing:border-box}
+.cbx.on i{background:var(--acc);border-color:var(--acc);position:relative}
+.cbx.on i:after{content:"";position:absolute;left:4px;top:0;width:4px;height:9px;border:solid #12141a;border-width:0 2px 2px 0;transform:rotate(45deg)}
+.cta.inline{align-items:center}
 .approx{display:inline-block;background:var(--surface2);border:1px solid var(--line);border-radius:18px;padding:6px 12px;font-size:12px;margin:0 0 10px}
 .approx.on{background:rgba(91,208,138,.16);border-color:var(--acc);color:var(--acc);font-weight:600}
 .new{outline:2px dashed rgba(91,208,138,.75);outline-offset:3px;border-radius:12px}
@@ -245,7 +250,7 @@ kbd{background:var(--surface2);border:1px solid var(--line);border-radius:5px;pa
 </div>
 
 <div class="screen">
-  <div class="cap"><b>2</b> &middot; Quantity &mdash; tap &ldquo;Approximate?&rdquo; to flag it</div>
+  <div class="cap"><b>2</b> &middot; Quantity &mdash; tap tick &ldquo;Approximate&rdquo; to flag it</div>
   <div class="phone">
     <div class="status"><span>9:41</span><span>&#9650; 87%</span></div>
     <div class="hero">
@@ -281,14 +286,13 @@ kbd{background:var(--surface2);border:1px solid var(--line);border-radius:5px;pa
       <div class="chips">
         <div class="chip on">150 g</div><div class="chip">200 g</div>
       </div>
-      <div class="pad" style="margin-bottom:10px">
+      <div class="pad">
         <div class="key">1</div><div class="key">2</div><div class="key">3</div>
         <div class="key">4</div><div class="key">5</div><div class="key">6</div>
         <div class="key">7</div><div class="key">8</div><div class="key">9</div>
         <div class="key f">.</div><div class="key">0</div><div class="key f">&#9003;</div>
       </div>
-      <div class="approx new">Approximate?</div>
-      <div class="cta"><div class="btn">Add to meal</div></div>
+      <div class="cta inline new"><div class="cbx"><i></i>Approximate</div><div class="btn">Add to meal</div></div>
     </div>
   </div>
 </div>
@@ -338,8 +342,7 @@ kbd{background:var(--surface2);border:1px solid var(--line);border-radius:5px;pa
         <div class="key">7</div><div class="key">8</div><div class="key">9</div>
         <div class="key f">.5</div><div class="key">0</div><div class="key f">&#9003;</div>
       </div>
-      <div class="approx">Approximate?</div>
-      <div class="cta"><div class="btn">Add to meal</div></div>
+      <div class="cta inline"><div class="cbx"><i></i>Approximate</div><div class="btn">Add to meal</div></div>
     </div>
     <div class="snack">Added Wholemeal bread &middot; 21 g <b>Undo</b></div>
   </div>
@@ -473,7 +476,6 @@ kbd{background:var(--surface2);border:1px solid var(--line);border-radius:5px;pa
       <div class="field"><label>Carbs per 100 g</label><div class="input">30</div></div>
       <div class="sw"><div><div class="k">Available in portions</div><div class="d">Slices, units, spoons&hellip;</div></div><div class="knob off"></div></div>
       <div class="sw new"><div><div class="k">Approximate by default</div><div class="d">For foods you can only guess, like restaurant dishes</div></div><div class="knob"></div></div>
-      <div class="hint">Every time this is logged, the quantity sheet opens with <span style="color:var(--acc)">&asymp; Approximate</span> already on. One tap undoes it for a single entry.</div>
     </div>
   </div>
 </div>
@@ -554,8 +556,7 @@ kbd{background:var(--surface2);border:1px solid var(--line);border-radius:5px;pa
         <div class="parse">Found a number in your clipboard
           <b>62 g carbs</b>
         </div>
-        <div class="new" style="font-size:10px;color:var(--dim);margin:-2px 0 10px;padding:4px 6px">&asymp; Logged as approximate &mdash; AI estimates always are</div>
-        <div class="cta"><div class="btn">Confirm &amp; add</div><div class="btn danger">Discard</div></div>
+        <div class="cta new"><div class="btn danger">Discard</div><div class="btn">Confirm &amp; add</div></div>
       </div>
       <div class="sect">Sent to &middot; Gemini</div>
       <div style="background:var(--surface);border:1px solid var(--line);border-radius:11px;padding:10px;font-size:10px;color:var(--dim);line-height:1.5">

@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
@@ -22,6 +23,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.foundation.selection.toggleable
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
@@ -143,27 +146,27 @@ fun QuantitySheet(
                 onKey = onKey,
             )
 
-            // Beside the commit, not in a menu: flipping it is the only extra tap an
-            // approximate entry costs, and an item's default usually saves even that.
-            QuantityChip(
-                text = if (state.approximate) "\u2248 Approximate" else "Approximate?",
-                selected = state.approximate,
-                onClick = onToggleApproximate,
-                modifier = Modifier
-                    .padding(top = 12.dp)
-                    .semantics {
-                        contentDescription = if (state.approximate) {
-                            "Marked approximate, tap to mark exact"
-                        } else {
-                            "Exact, tap to mark approximate"
-                        }
-                    },
-            )
-
             Row(
+                verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 modifier = Modifier.fillMaxWidth().padding(top = 12.dp),
             ) {
+                // On the commit row, not in a menu: flipping it is the only extra tap an
+                // approximate entry costs, and an item's default usually saves even that.
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(8.dp))
+                        .toggleable(
+                            value = state.approximate,
+                            role = Role.Checkbox,
+                            onValueChange = { onToggleApproximate() },
+                        )
+                        .padding(end = 6.dp),
+                ) {
+                    Checkbox(checked = state.approximate, onCheckedChange = null)
+                    Text("Approximate", fontSize = 13.sp)
+                }
                 Button(
                     onClick = onCommit,
                     enabled = state.value > 0.0,

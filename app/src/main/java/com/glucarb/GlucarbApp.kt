@@ -11,6 +11,8 @@ class GlucarbApp : Application() {
     @Inject lateinit var photoStore: PhotoStore
 
     override fun onCreate() {
+        // Before super: Hilt builds its graph there, and a crash in it must be caught too.
+        CrashReporter.install(this)
         super.onCreate()
         // Scratch files handed to the AI app are never needed across launches.
         photoStore.clearShareCache()

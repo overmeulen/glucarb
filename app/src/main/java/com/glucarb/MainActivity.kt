@@ -10,6 +10,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 import androidx.core.content.IntentCompat
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
@@ -37,6 +38,7 @@ class MainActivity : ComponentActivity() {
         setContent {
             GlucarbTheme {
                 GlucarbNavHost()
+                CrashReportPrompt()
             }
         }
     }
@@ -111,4 +113,47 @@ fun GlucarbNavHost() {
         if (shared == null) return@LaunchedEffect
         if (nav.currentDestination?.route != Routes.ITEM) nav.navigate(Routes.item(0L))
     }
+}
+
+/**
+ * Shown once after a crash. Nothing leaves the phone unless the user picks an app to send
+ * the report with; either answer deletes it, so the prompt never nags.
+ */
+@Composable
+private fun CrashReportPrompt() {
+    val context = androidx.compose.ui.platform.LocalContext.current
+    var report by androidx.compose.runtime.saveable.rememberSaveable {
+        androidx.compose.runtime.mutableStateOf(CrashReporter.pending(context))
+    }
+    val text = report ?: return
+    val close = {
+        CrashReporter.clear(context)
+        report = null
+    }
+    androidx.compose.material3.AlertDialog(
+        onDismissRequest = close,
+        title = { androidx.compose.material3.Text("Glucarb closed unexpectedly") },
+        text = {
+            androidx.compose.material3.Text(
+                "A crash report was saved on this phone. Sending it helps fix the problem. " +
+                    "It contains the error details and your phone model, none of your meals or items.",
+            )
+        },
+        confirmButton = {
+            androidx.compose.material3.TextButton(onClick = {
+                val send = Intent(Intent.ACTION_SEND)
+                    .setType("text/plain")
+                    .putExtra(Intent.EXTRA_EMAIL, arrayOf(CrashReporter.CONTACT_EMAIL))
+                    .putExtra(Intent.EXTRA_SUBJECT, "Glucarb crash report")
+                    .putExtra(Intent.EXTRA_TEXT, text)
+                runCatching { context.startActivity(Intent.createChooser(send, "Send crash report")) }
+                close()
+            }) { androidx.compose.material3.Text("Send report") }
+        },
+        dismissButton = {
+            androidx.compose.material3.TextButton(onClick = close) {
+                androidx.compose.material3.Text("Don't send")
+            }
+        },
+    )
 }

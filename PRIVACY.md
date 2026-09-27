@@ -1,7 +1,7 @@
 # Privacy Policy
 
 **App:** Glucarb
-**Last updated:** 28 August 2026
+**Last updated:** 27 September 2026
 
 Glucarb is a carbohydrate counter. It records the food you log and the carbohydrate
 totals it calculates. This document describes exactly what happens to that information.
@@ -10,10 +10,10 @@ totals it calculates. This document describes exactly what happens to that infor
 
 Glucarb has **no internet permission**. It cannot send your data anywhere, because
 the operating system will not let it open a network connection. There is no account, no
-sign-up, no analytics, no advertising, no crash reporting and no tracking of any kind.
+sign-up, no analytics, no advertising, no automatic crash reporting and no tracking of any kind.
 Nothing you log is transmitted to the developer, and the developer cannot see it.
 
-There are exactly two ways data leaves your phone, both described below, and both are
+There are exactly three ways data leaves your phone, all described below, and all are
 under your control.
 
 ## What the app stores
@@ -32,10 +32,10 @@ collected at any point.
 ## Health data
 
 Carbohydrate intake is health information, so it is treated as sensitive. It never
-leaves the device except through the two mechanisms below. Glucarb does not read from
+leaves the device except through the three mechanisms below. Glucarb does not read from
 or write to Google Fit, Health Connect, or any glucose meter or CGM.
 
-## The two ways data can leave your device
+## The three ways data can leave your device
 
 ### 1. Android Auto Backup — on by default, controlled by you
 
@@ -62,6 +62,14 @@ app is a separate product with its own privacy policy and its own servers, and i
 very likely upload the photo. Choose the destination deliberately, and read its policy.
 Glucarb receives nothing back automatically — you type in the result yourself.
 
+### 3. Crash reports ? only if you choose to send one
+
+If Glucarb closes because of an error, the technical details (error message, app version,
+phone model and Android version) are saved on your phone. On the next launch you are asked
+whether to send them. Only if you tap "Send report" and pick an app, typically your email
+app, do they reach the developer. The report contains none of your meals, foods or photos,
+and either answer deletes it from the phone.
+
 ## Camera
 
 Glucarb does not request the camera permission. When you add a photo, Android's own
@@ -86,4 +94,4 @@ accompany an app update.
 
 ## Contact
 
-Questions about this policy: **<add your contact email address here>**
+Questions about this policy: **overmeulen85@gmail.com**

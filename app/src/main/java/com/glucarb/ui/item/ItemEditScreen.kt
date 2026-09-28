@@ -123,13 +123,9 @@ fun ItemEditScreen(
     }
 
     // A new item always starts with the name, so opening the keyboard there saves a tap.
-    // An edit does not: the user came here to change one specific field.
-    LaunchedEffect(Unit) {
-        if (state.id == 0L) {
-            nameFocus.requestFocus()
-            keyboard?.show()
-        }
-    }
+    // An edit does not: the user came here to change one specific field. The request itself
+    // is made next to the field, inside the Scaffold (see below).
+    val focusNameOnOpen = viewModel.isNew
 
     Scaffold(
         snackbarHost = { SnackbarHost(snackbar) },
@@ -173,6 +169,15 @@ fun ItemEditScreen(
                     .padding(top = 12.dp)
                     .focusRequester(nameFocus),
             )
+            // Scaffold composes its content later than the screen around it, during layout;
+            // requested from outside, the focus target could still be unattached, which
+            // crashed on some Honor phones. Here the field is attached before this effect
+            // runs, and a failed request only costs the keyboard, never the app.
+            if (focusNameOnOpen) {
+                LaunchedEffect(Unit) {
+                    if (runCatching { nameFocus.requestFocus() }.isSuccess) keyboard?.show()
+                }
+            }
 
             IdentityPicker(
                 state = state,

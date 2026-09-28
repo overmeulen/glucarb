@@ -76,6 +76,9 @@ class ItemEditViewModel @Inject constructor(
 
     private val itemId: Long = savedStateHandle.get<String>("itemId")?.toLongOrNull() ?: 0L
 
+    /** Known at once, unlike [ItemEditState.id], which stays 0 until an edited item loads. */
+    val isNew: Boolean get() = itemId == 0L
+
     /**
      * The initial load of an existing item.
      *

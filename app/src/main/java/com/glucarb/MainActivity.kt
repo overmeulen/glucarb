@@ -19,6 +19,7 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.glucarb.ui.SharedPhotoInbox
 import com.glucarb.ui.history.HistoryScreen
+import com.glucarb.ui.history.MealDetailScreen
 import com.glucarb.ui.home.HomeScreen
 import com.glucarb.ui.item.ItemEditScreen
 import com.glucarb.ui.settings.SettingsScreen
@@ -62,6 +63,7 @@ class MainActivity : ComponentActivity() {
 private object Routes {
     const val HOME = "home"
     const val HISTORY = "history"
+    const val MEAL = "meal/{mealId}"
     const val SETTINGS = "settings"
     const val ITEM = "item/{itemId}?name={name}"
 
@@ -97,7 +99,17 @@ fun GlucarbNavHost() {
         }
 
         composable(Routes.HISTORY) {
-            HistoryScreen(onBack = { nav.popBackStack() })
+            HistoryScreen(
+                onBack = { nav.popBackStack() },
+                onOpenMeal = { id -> nav.navigate("meal/$id") },
+            )
+        }
+
+        composable(
+            route = Routes.MEAL,
+            arguments = listOf(navArgument("mealId") { type = NavType.StringType }),
+        ) {
+            MealDetailScreen(onBack = { nav.popBackStack() })
         }
 
         composable(Routes.SETTINGS) {

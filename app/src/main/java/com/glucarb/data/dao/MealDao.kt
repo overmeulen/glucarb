@@ -77,6 +77,9 @@ interface MealDao {
     @Query("UPDATE meals SET lastActivityAt = :now WHERE id = :id")
     suspend fun touchMeal(id: Long, now: Long)
 
+    @Query("UPDATE meals SET startedAt = :startedAt WHERE id = :id")
+    suspend fun setMealStart(id: Long, startedAt: Long)
+
     @Query("DELETE FROM meals WHERE id = :id")
     suspend fun deleteMeal(id: Long)
 

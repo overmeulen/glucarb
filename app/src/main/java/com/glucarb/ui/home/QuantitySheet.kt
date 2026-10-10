@@ -7,13 +7,15 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Checkbox
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
@@ -32,10 +34,10 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.glucarb.domain.CarbMath
+import com.glucarb.ui.common.TipCard
 import com.glucarb.ui.common.ItemAvatar
 
 private val KEYS_PLAIN = listOf("1", "2", "3", "4", "5", "6", "7", "8", "9", ".", "0", "<")
-private val KEYS_PORTION = listOf("1", "2", "3", "4", "5", "6", "7", "8", "9", ".5", "0", "<")
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -48,6 +50,8 @@ fun QuantitySheet(
     onCommit: () -> Unit,
     onDismiss: () -> Unit,
     onDelete: (() -> Unit)? = null,
+    showApproxTip: Boolean = false,
+    onDismissApproxTip: () -> Unit = {},
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     ModalBottomSheet(onDismissRequest = onDismiss, sheetState = sheetState) {
@@ -68,17 +72,7 @@ fun QuantitySheet(
                 Column(Modifier.weight(1f)) {
                     Text(state.item.name, style = MaterialTheme.typography.titleMedium)
                     Text(
-                        buildString {
-                            append(CarbMath.format(state.item.carbsPer100))
-                            append(" g carbs / 100 ")
-                            append(state.item.unit.label)
-                            CarbMath.carbsPerPortion(state.item)?.let { perPortion ->
-                                append("  \u00B7  ")
-                                append(CarbMath.formatCarbs(perPortion))
-                                append(" g / ")
-                                append(state.item.portionName)
-                            }
-                        },
+                        rateLabel(state),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
@@ -98,7 +92,14 @@ fun QuantitySheet(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 modifier = Modifier.fillMaxWidth().padding(vertical = 6.dp),
             ) {
-                Row(verticalAlignment = Alignment.Bottom) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    // Before the amount, where the thumb already is: after the keypad it
+                    // was the thing everyone forgot when using a quick value.
+                    if (!state.item.approximateByDefault) {
+                        ApproximateToggle(state.approximate, onToggleApproximate)
+                        Spacer(Modifier.width(12.dp))
+                    }
+                    Row(verticalAlignment = Alignment.Bottom) {
                     Text(
                         state.input.ifEmpty { "0" },
                         fontSize = 40.sp,
@@ -110,14 +111,16 @@ fun QuantitySheet(
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.padding(bottom = 6.dp),
                     )
+                    }
                 }
                 Text(
-                    "${CarbMath.formatCarbs(state.carbs)} g carbs",
+                    "${CarbMath.formatCarbs(state.carbs, state.approximate)} g carbs",
                     color = MaterialTheme.colorScheme.primary,
                     fontWeight = FontWeight.SemiBold,
                     style = MaterialTheme.typography.bodyMedium,
                     modifier = Modifier.semantics {
-                        contentDescription = "${CarbMath.formatCarbs(state.carbs)} grams of carbs"
+                        contentDescription = (if (state.approximate) "about " else "") +
+                            "${CarbMath.formatCarbs(state.carbs)} grams of carbs"
                     },
                 )
             }
@@ -142,45 +145,26 @@ fun QuantitySheet(
             }
 
             Keypad(
-                keys = if (state.asPortions) KEYS_PORTION else KEYS_PLAIN,
+                keys = KEYS_PLAIN,
                 onKey = onKey,
             )
+
+            if (showApproxTip && !state.item.approximateByDefault && state.editingEntryId == null) {
+                TipCard(
+                    text = "Not sure of the quantity? Tap ~ to log it as approximate.",
+                    onDismiss = onDismissApproxTip,
+                    modifier = Modifier.padding(top = 10.dp),
+                )
+            }
 
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 modifier = Modifier.fillMaxWidth().padding(top = 12.dp),
             ) {
-                // On the commit row, not in a menu: flipping it is the only extra tap an
-                // approximate entry costs, and an item's default usually saves even that.
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(8.dp))
-                        .toggleable(
-                            value = state.approximate,
-                            role = Role.Checkbox,
-                            onValueChange = { onToggleApproximate() },
-                        )
-                        .padding(end = 6.dp),
-                ) {
-                    Checkbox(checked = state.approximate, onCheckedChange = null)
-                    Text("Approximate", fontSize = 13.sp)
-                }
-                Button(
-                    onClick = onCommit,
-                    enabled = state.value > 0.0,
-                    modifier = Modifier.weight(1f),
-                ) {
-                    Text(
-                        if (state.editingEntryId == null) "Add to meal" else "Save",
-                        fontWeight = FontWeight.Bold,
-                    )
-                }
+                // Delete on the left, Save on the right: the primary action is always
+                // where the right thumb rests.
                 if (onDelete != null) {
-                    // A 64dp outlined button wrapped "Del" onto two lines. Matching Save's
-                    // shape and giving it the error colour reads as destructive without
-                    // needing to be cramped.
                     Button(
                         onClick = onDelete,
                         modifier = Modifier.weight(1f),
@@ -192,8 +176,56 @@ fun QuantitySheet(
                         Text("Delete", fontWeight = FontWeight.Bold)
                     }
                 }
+                Button(
+                    onClick = onCommit,
+                    enabled = state.value > 0.0,
+                    modifier = Modifier.weight(1f),
+                ) {
+                    Text(
+                        if (state.editingEntryId == null) "Add to meal" else "Save",
+                        fontWeight = FontWeight.Bold,
+                    )
+                }
             }
         }
+    }
+}
+
+/** Only the rate for the mode in use: the other one is a tap away and just adds noise. */
+private fun rateLabel(state: QuantitySheetState): String {
+    val item = state.item
+    val tilde = if (item.approximateByDefault) "~" else ""
+    val perPortion = if (state.asPortions) CarbMath.carbsPerPortion(item) else null
+    return if (perPortion != null) {
+        "$tilde${CarbMath.formatCarbs(perPortion)} g carbs / ${item.portionName}"
+    } else {
+        "$tilde${CarbMath.format(item.carbsPer100)} g carbs / 100 ${item.unit.label}"
+    }
+}
+
+@Composable
+private fun ApproximateToggle(on: Boolean, onToggle: () -> Unit) {
+    val accent = MaterialTheme.colorScheme.primary
+    Box(
+        contentAlignment = Alignment.Center,
+        modifier = Modifier
+            .size(44.dp)
+            .clip(CircleShape)
+            .background(if (on) accent.copy(alpha = 0.18f) else MaterialTheme.colorScheme.surfaceVariant)
+            .border(1.dp, if (on) accent else MaterialTheme.colorScheme.outline, CircleShape)
+            .toggleable(
+                value = on,
+                role = Role.Switch,
+                onValueChange = { onToggle() },
+            )
+            .semantics { contentDescription = "Approximate" },
+    ) {
+        Text(
+            "~",
+            fontSize = 22.sp,
+            fontWeight = FontWeight.Bold,
+            color = if (on) accent else MaterialTheme.colorScheme.onSurfaceVariant,
+        )
     }
 }
 

@@ -28,37 +28,6 @@ import kotlinx.coroutines.launch
 import java.util.Calendar
 import javax.inject.Inject
 
-data class QuantitySheetState(
-    val item: FoodItem,
-    val editingEntryId: Long? = null,
-    val asPortions: Boolean,
-    val input: String,
-    val chips: List<Double> = emptyList(),
-    /**
-     * True while [input] is a value the app proposed rather than one the user typed.
-     * The first keystroke then replaces it instead of appending, which is what a
-     * calculator does and what "100" -> tap 5 -> "5" needs to mean.
-     */
-    val pristine: Boolean = true,
-    /** Starts from the item's default (or the entry being edited); the chip overrides it. */
-    val approximate: Boolean = item.approximateByDefault,
-) {
-    val value: Double get() = input.toDoubleOrNull() ?: 0.0
-
-
-    val quantity: Double
-        get() = if (asPortions) CarbMath.portionsToQuantity(value, item.portionSize) else value
-
-    val carbs: Double get() = CarbMath.carbsFor(quantity, item.carbsPer100)
-
-    val unitLabel: String
-        get() = if (asPortions) {
-            if (value == 1.0) item.portionName else item.portionName + "s"
-        } else {
-            item.unit.label
-        }
-}
-
 /** Ad-hoc entry being edited or confirmed (AI estimate). */
 data class AdHocSheetState(
     val entryId: Long,
@@ -75,7 +44,20 @@ data class HomeUiState(
     val gridMode: Boolean = true,
     val meal: MealWithEntries? = null,
     val loading: Boolean = true,
+    val tourDone: Boolean = false,
+    val tourRequested: Boolean = false,
+    val seenTips: Set<String> = emptySet(),
 ) {
+    /** The 3-step tour: a brand-new empty catalog, or when the user asked to see it again. */
+    val showTour: Boolean get() = !loading && !tourDone && (catalogEmpty || tourRequested)
+
+    /** An existing catalog means the user is past the tour; it is marked done silently. */
+    val tourImplicitlyDone: Boolean
+        get() = !loading && !tourDone && !tourRequested && query.isBlank() && items.isNotEmpty()
+
+    /** Tips wait for the tour so the two never stack. */
+    fun showTip(id: String): Boolean = !loading && tourDone && id !in seenTips
+
     val mealCarbs: Double get() = meal?.totalCarbs ?: 0.0
     val showCreateRow: Boolean get() = query.isNotBlank() && items.isEmpty()
     val catalogEmpty: Boolean get() = query.isBlank() && items.isEmpty() && !loading
@@ -85,6 +67,9 @@ sealed interface HomeEvent {
     data class EntryAdded(val label: String, val carbs: Double, val entryId: Long) : HomeEvent
     data class EntryDeleted(val entry: MealEntry) : HomeEvent
     data class Message(val text: String) : HomeEvent
+
+    /** The meal start was moved; [previous] lets the snackbar undo it. */
+    data class MealTimeSet(val mealId: Long, val previous: Long, val newStart: Long) : HomeEvent
     data class ShareForAi(val entryId: Long, val photoPath: String, val prompt: String) : HomeEvent
 }
 
@@ -100,9 +85,6 @@ class HomeViewModel @Inject constructor(
 
     /** The search text on its own, without waiting for the catalog, meal and settings. */
     val searchQuery: StateFlow<String> = query
-
-    private val _sheet = MutableStateFlow<QuantitySheetState?>(null)
-    val sheet: StateFlow<QuantitySheetState?> = _sheet
 
     private val _adHocSheet = MutableStateFlow<AdHocSheetState?>(null)
     val adHocSheet: StateFlow<AdHocSheetState?> = _adHocSheet
@@ -142,6 +124,9 @@ class HomeViewModel @Inject constructor(
             gridMode = prefs.gridMode,
             meal = meal,
             loading = false,
+            tourDone = prefs.tourDone,
+            tourRequested = prefs.tourRequested,
+            seenTips = prefs.seenTips,
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), HomeUiState())
 
@@ -160,174 +145,98 @@ class HomeViewModel @Inject constructor(
         }
     }
 
-    // ---------------------------------------------------------------- quantity sheet
+    // ---------------------------------------------------------------- meal time
 
-    fun openSheetFor(item: FoodItem) {
+    /** "Now": the meal is started when eating begins, not when the first item was logged. */
+    fun restampMealNow() {
         viewModelScope.launch {
-            val last = mealRepo.lastEntryFor(item.id)
-            val asPortions = item.hasPortions && (last?.enteredAsPortions ?: true)
-            val initial = when {
-                last == null && asPortions -> 1.0
-                last == null -> 100.0
-                asPortions -> last.portionsValue
-                    ?: CarbMath.quantityToPortions(last.quantity, item.portionSize) ?: 1.0
-                else -> last.quantity
-            }
-            _sheet.value = QuantitySheetState(
-                item = item,
-                asPortions = asPortions,
-                input = CarbMath.format(initial, 2),
-                chips = chipsFor(item, asPortions),
-            )
+            val now = System.currentTimeMillis()
+            val (id, previous) = mealRepo.restampOpenMeal(now) ?: return@launch
+            _events.send(HomeEvent.MealTimeSet(id, previous, now))
         }
     }
 
+    /** Sets the open meal's start to [hour]:[minute] on the day it already starts on. */
+    fun setMealTime(hour: Int, minute: Int) {
+        val meal = uiState.value.meal?.meal ?: return
+        val start = Calendar.getInstance().apply {
+            timeInMillis = meal.startedAt
+            set(Calendar.HOUR_OF_DAY, hour)
+            set(Calendar.MINUTE, minute)
+            set(Calendar.SECOND, 0)
+            set(Calendar.MILLISECOND, 0)
+        }.timeInMillis
+        viewModelScope.launch {
+            val previous = mealRepo.setMealStart(meal.id, start) ?: return@launch
+            _events.send(HomeEvent.MealTimeSet(meal.id, previous, start))
+        }
+    }
+
+    fun undoMealTime(mealId: Long, previous: Long) {
+        viewModelScope.launch { mealRepo.setMealStart(mealId, previous) }
+    }
+
+    // ---------------------------------------------------------------- tutorial
+
+    fun finishTour() {
+        viewModelScope.launch { settingsRepo.setTourDone() }
+    }
+
+    fun dismissTip(id: String) {
+        viewModelScope.launch { settingsRepo.markTipSeen(id) }
+    }
+
+    // ---------------------------------------------------------------- quantity sheet
+
+    private val sheetController = QuantitySheetController(foodRepo, mealRepo, viewModelScope)
+
+    val sheet: StateFlow<QuantitySheetState?> = sheetController.sheet
+
+    fun openSheetFor(item: FoodItem) = sheetController.openFor(item)
+
     fun openSheetForEntry(entry: MealEntry) {
         viewModelScope.launch {
-            val item = entry.foodItemId?.let { foodRepo.get(it) }
-            if (item == null) {
+            if (!sheetController.openForEntry(entry)) {
                 _adHocSheet.value = AdHocSheetState(
                     entryId = entry.id,
                     label = entry.label,
                     photoPath = entry.photoPath,
                     input = CarbMath.format(entry.carbs, 1),
                 )
-                return@launch
-            }
-            val asPortions = entry.enteredAsPortions && item.hasPortions
-            val initial = if (asPortions) entry.portionsValue ?: 1.0 else entry.quantity
-            _sheet.value = QuantitySheetState(
-                item = item,
-                editingEntryId = entry.id,
-                asPortions = asPortions,
-                input = CarbMath.format(initial, 2),
-                chips = chipsFor(item, asPortions),
-                approximate = entry.approximate,
-            )
-        }
-    }
-
-    private suspend fun chipsFor(item: FoodItem, asPortions: Boolean): List<Double> {
-        val rows = mealRepo.frequentQuantities(item.id)
-        val values = rows.mapNotNull { row ->
-            if (asPortions) {
-                row.portionsValue ?: CarbMath.quantityToPortions(row.quantity, item.portionSize)
-            } else {
-                row.quantity
             }
         }
-        val fallback = if (asPortions) listOf(1.0, 2.0, 3.0, 4.0) else defaultChips(item)
-        // Taken before sorting, so these are the two *most used* values, then ordered for
-        // the eye. More than two turned the row into something to read rather than hit.
-        return (values + fallback).distinctBy { CarbMath.format(it, 2) }.take(CHIP_COUNT).sorted()
     }
 
-    private companion object {
-        const val CHIP_COUNT = 2
-    }
-
-    private fun defaultChips(item: FoodItem): List<Double> =
-        if (item.unit == com.glucarb.data.MeasurementUnit.ML) {
-            listOf(100.0, 200.0, 250.0, 330.0)
-        } else {
-            listOf(30.0, 50.0, 100.0, 150.0)
-        }
-
-    fun onKey(key: String) {
-        val current = _sheet.value ?: return
-        _sheet.value = current.copy(input = applyKey(current.input, key, current.pristine), pristine = false)
-    }
+    fun onKey(key: String) = sheetController.onKey(key)
 
     fun onAdHocKey(key: String) {
         val current = _adHocSheet.value ?: return
         _adHocSheet.value = current.copy(
-            input = applyKey(current.input, key, current.pristine),
+            input = QuantitySheetController.applyKey(current.input, key, current.pristine),
             fromClipboard = false,
             pristine = false,
         )
     }
 
-    /**
-     * [pristine] means the shown value was proposed by the app, so the first digit
-     * replaces it. Backspace is exempt: deleting a digit off a proposed value is a
-     * deliberate edit of it, not the start of a new number.
-     */
-    private fun applyKey(current: String, key: String, pristine: Boolean): String {
-        val input = if (pristine && key != "<") "" else current
-        return when (key) {
-            "<" -> input.dropLast(1)
-            "." -> if (input.contains('.')) input else (input.ifEmpty { "0" } + ".")
-            ".5" -> if (input.contains('.')) input else (input.ifEmpty { "0" } + ".5")
-            else -> {
-                val next = if (input == "0") key else input + key
-                if (next.length > 6) input else next
-            }
-        }
-    }
+    fun setSheetValue(value: Double) = sheetController.setValue(value, ::onSheetAdded)
 
-    /**
-     * Quick values commit straight away. They exist to make the common case a single
-     * tap, and a confirmation tap after the value is already correct is the click this
-     * screen is built to avoid. The add is undoable from the snackbar.
-     */
-    fun setSheetValue(value: Double) {
-        val current = _sheet.value ?: return
-        _sheet.value = current.copy(input = CarbMath.format(value, 2), pristine = true)
-        commitSheet()
-    }
+    fun togglePortionMode() = sheetController.togglePortionMode()
 
-    fun togglePortionMode() {
-        val current = _sheet.value ?: return
-        if (!current.item.hasPortions) return
-        val toPortions = !current.asPortions
-        val converted = if (toPortions) {
-            CarbMath.quantityToPortions(current.value, current.item.portionSize) ?: 1.0
-        } else {
-            CarbMath.portionsToQuantity(current.value, current.item.portionSize)
-        }
-        viewModelScope.launch {
-            _sheet.value = current.copy(
-                asPortions = toPortions,
-                input = CarbMath.format(converted, 2),
-                chips = chipsFor(current.item, toPortions),
-                pristine = true,
-            )
-        }
-    }
+    fun toggleApproximate() = sheetController.toggleApproximate()
 
-    fun toggleApproximate() {
-        val current = _sheet.value ?: return
-        _sheet.value = current.copy(approximate = !current.approximate)
-    }
-
-    fun dismissSheet() {
-        _sheet.value = null
-    }
+    fun dismissSheet() = sheetController.dismiss()
 
     fun dismissAdHocSheet() {
         _adHocSheet.value = null
     }
 
-    fun commitSheet() {
-        val state = _sheet.value ?: return
-        if (state.value <= 0.0) return
-        _sheet.value = null
-        viewModelScope.launch {
-            if (state.editingEntryId != null) {
-                mealRepo.updateEntryQuantity(
-                    state.editingEntryId, state.item, state.value, state.asPortions,
-                    approximate = state.approximate,
-                )
-            } else {
-                // Cleared only on an actual add: dismissing a wrong pick keeps the search,
-                // so the right result is still one tap away.
-                query.value = ""
-                val id = mealRepo.addCatalogEntry(
-                    state.item, state.value, state.asPortions, approximate = state.approximate,
-                )
-                _events.send(HomeEvent.EntryAdded(state.item.name, state.carbs, id))
-            }
-        }
+    fun commitSheet() = sheetController.commit(::onSheetAdded)
+
+    private suspend fun onSheetAdded(entryId: Long, state: QuantitySheetState) {
+        // Cleared only on an actual add: dismissing a wrong pick keeps the search,
+        // so the right result is still one tap away.
+        query.value = ""
+        _events.send(HomeEvent.EntryAdded(state.item.name, state.carbs, entryId))
     }
 
     fun commitAdHoc() {

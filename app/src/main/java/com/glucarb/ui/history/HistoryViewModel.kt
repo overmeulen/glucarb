@@ -80,9 +80,6 @@ class HistoryViewModel @Inject constructor(
     private val exporter: MealExporter,
 ) : ViewModel() {
 
-    private val _editing = MutableStateFlow<MealEntry?>(null)
-    val editing: StateFlow<MealEntry?> = _editing
-
     private val _exporting = MutableStateFlow(false)
     val exporting: StateFlow<Boolean> = _exporting.asStateFlow()
 
@@ -92,23 +89,6 @@ class HistoryViewModel @Inject constructor(
     val days: StateFlow<List<DayGroup>> = mealRepo.observeRecentMeals()
         .map { meals -> groupByDay(meals) }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
-
-    fun edit(entry: MealEntry) { _editing.value = entry }
-    fun dismissEdit() { _editing.value = null }
-
-    fun deleteEntry(entryId: Long) {
-        _editing.value = null
-        viewModelScope.launch { mealRepo.deleteEntry(entryId) }
-    }
-
-    fun updateEntry(entryId: Long, input: Double, asPortions: Boolean) {
-        _editing.value = null
-        viewModelScope.launch {
-            val entry = mealRepo.getEntry(entryId) ?: return@launch
-            val item = entry.foodItemId?.let { foodRepo.get(it) }
-            mealRepo.updateEntryQuantity(entryId, item, input, asPortions)
-        }
-    }
 
     /** Epoch millis a preset range starts at. */
     fun startOf(range: ExportRange): Long = range.startFrom(System.currentTimeMillis())

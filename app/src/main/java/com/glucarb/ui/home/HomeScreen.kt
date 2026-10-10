@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -71,8 +72,24 @@ import com.glucarb.data.entity.MealEntry
 import com.glucarb.domain.CarbMath
 import com.glucarb.ui.common.FoodRow
 import com.glucarb.ui.common.FoodTile
+import com.glucarb.ui.common.MealTimeDialog
+import com.glucarb.ui.common.TOUR_STEPS
+import com.glucarb.ui.common.TipCard
+import com.glucarb.ui.common.TourOverlay
+import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.layout.boundsInRoot
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.foundation.lazy.grid.GridItemSpan
+import androidx.compose.material3.TextButton
+import java.text.DateFormat
+import java.util.Date
 import com.glucarb.ui.settings.AssistantPickerDialog
 import com.glucarb.ui.settings.rememberShareTargets
+
+private const val TIP_TILE = "tile"
+private const val TIP_APPROX = "approx"
+private const val TIP_MEAL = "meal"
+private const val TILE_TIP = "Tap a food to add it to your meal. Long-press to edit it."
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -93,6 +110,16 @@ fun HomeScreen(
     var captureUri by rememberSaveable { mutableStateOf<String?>(null) }
     var choosingAssistant by remember { mutableStateOf(false) }
     val shareTargets = rememberShareTargets()
+    var editingTime by remember { mutableStateOf(false) }
+    var tourStep by rememberSaveable { mutableStateOf(0) }
+    var plusBounds by remember { mutableStateOf<Rect?>(null) }
+    var cameraBounds by remember { mutableStateOf<Rect?>(null) }
+    var headerBounds by remember { mutableStateOf<Rect?>(null) }
+
+    // Anyone who already has a catalog is past the tour; never show it to them.
+    LaunchedEffect(state.tourImplicitlyDone) {
+        if (state.tourImplicitlyDone) viewModel.finishTour()
+    }
 
     val cameraLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.TakePicture()
@@ -135,6 +162,18 @@ fun HomeScreen(
                         duration = SnackbarDuration.Short,
                     )
                     if (result == SnackbarResult.ActionPerformed) viewModel.undoAdd(event.entryId)
+                }
+
+                is HomeEvent.MealTimeSet -> {
+                    val label = DateFormat.getTimeInstance(DateFormat.SHORT).format(Date(event.newStart))
+                    val result = snackbar.showSnackbar(
+                        message = "Meal time set to $label",
+                        actionLabel = "Undo",
+                        duration = SnackbarDuration.Short,
+                    )
+                    if (result == SnackbarResult.ActionPerformed) {
+                        viewModel.undoMealTime(event.mealId, event.previous)
+                    }
                 }
 
                 is HomeEvent.EntryDeleted -> {
@@ -190,12 +229,16 @@ fun HomeScreen(
                             launchCapture()
                         }
                     },
+                    modifier = Modifier.onGloballyPositioned { cameraBounds = it.boundsInRoot() },
                     containerColor = MaterialTheme.colorScheme.surfaceVariant,
                     contentColor = MaterialTheme.colorScheme.onSurfaceVariant,
                 ) {
                     Icon(Icons.Outlined.CameraAlt, contentDescription = "Estimate a plate with AI")
                 }
-                FloatingActionButton(onClick = { onCreateItem("") }) {
+                FloatingActionButton(
+                    onClick = { onCreateItem("") },
+                    modifier = Modifier.onGloballyPositioned { plusBounds = it.boundsInRoot() },
+                ) {
                     Icon(Icons.Default.Add, contentDescription = "New catalog item")
                 }
             }
@@ -204,6 +247,12 @@ fun HomeScreen(
         Column(Modifier.fillMaxSize().padding(padding)) {
 
             MealPanel(
+                startedAt = state.meal?.meal?.startedAt,
+                onNow = viewModel::restampMealNow,
+                onEditTime = { editingTime = true },
+                showMealTip = state.meal != null && state.showTip(TIP_MEAL),
+                onDismissMealTip = { viewModel.dismissTip(TIP_MEAL) },
+                headerIconsModifier = Modifier.onGloballyPositioned { headerBounds = it.boundsInRoot() },
                 carbs = state.mealCarbs,
                 approximate = state.meal?.isApproximate == true,
                 entries = state.meal?.entries.orEmpty(),
@@ -236,10 +285,15 @@ fun HomeScreen(
                     ),
                     modifier = Modifier.fillMaxSize(),
                 ) {
+                    if (state.query.isBlank() && state.showTip(TIP_TILE)) {
+                        item(span = { GridItemSpan(maxLineSpan) }) {
+                            TipCard(TILE_TIP, { viewModel.dismissTip(TIP_TILE) })
+                        }
+                    }
                     items(state.items, key = { it.id }) { item ->
                         FoodTile(
                             item = item,
-                            onClick = { viewModel.openSheetFor(item) },
+                            onClick = { viewModel.dismissTip(TIP_TILE); viewModel.openSheetFor(item) },
                             onLongClick = { onEditItem(item.id) },
                         )
                     }
@@ -251,10 +305,18 @@ fun HomeScreen(
                     ),
                     modifier = Modifier.fillMaxSize(),
                 ) {
+                    if (state.query.isBlank() && state.showTip(TIP_TILE)) {
+                        item {
+                            TipCard(
+                                TILE_TIP, { viewModel.dismissTip(TIP_TILE) },
+                                Modifier.padding(bottom = 8.dp),
+                            )
+                        }
+                    }
                     items(state.items, key = { it.id }) { item ->
                         FoodRow(
                             item = item,
-                            onClick = { viewModel.openSheetFor(item) },
+                            onClick = { viewModel.dismissTip(TIP_TILE); viewModel.openSheetFor(item) },
                             onLongClick = { onEditItem(item.id) },
                         )
                     }
@@ -269,7 +331,12 @@ fun HomeScreen(
             onKey = viewModel::onKey,
             onChip = viewModel::setSheetValue,
             onToggleMode = viewModel::togglePortionMode,
-            onToggleApproximate = viewModel::toggleApproximate,
+            onToggleApproximate = {
+                viewModel.dismissTip(TIP_APPROX)
+                viewModel.toggleApproximate()
+            },
+            showApproxTip = state.showTip(TIP_APPROX),
+            onDismissApproxTip = { viewModel.dismissTip(TIP_APPROX) },
             onCommit = viewModel::commitSheet,
             onDismiss = viewModel::dismissSheet,
             onDelete = s.editingEntryId?.let {
@@ -285,6 +352,37 @@ fun HomeScreen(
             onCommit = viewModel::commitAdHoc,
             onCancel = { viewModel.cancelPendingAi(s.entryId) },
             onDismiss = viewModel::dismissAdHocSheet,
+        )
+    }
+
+    if (editingTime) {
+        MealTimeDialog(
+            initial = state.meal?.meal?.startedAt ?: System.currentTimeMillis(),
+            showDate = false,
+            onDismiss = { editingTime = false },
+            onSave = { millis ->
+                editingTime = false
+                val cal = java.util.Calendar.getInstance().apply { timeInMillis = millis }
+                viewModel.setMealTime(
+                    cal.get(java.util.Calendar.HOUR_OF_DAY),
+                    cal.get(java.util.Calendar.MINUTE),
+                )
+            },
+        )
+    }
+
+    if (state.showTour) {
+        val target = when (tourStep) {
+            0 -> plusBounds
+            1 -> cameraBounds
+            else -> headerBounds
+        }
+        val finish = { tourStep = 0; viewModel.finishTour() }
+        TourOverlay(
+            step = tourStep,
+            target = target,
+            onNext = { if (tourStep >= TOUR_STEPS.lastIndex) finish() else tourStep++ },
+            onSkip = finish,
         )
     }
 
@@ -314,6 +412,12 @@ fun HomeScreen(
  */
 @Composable
 private fun MealPanel(
+    startedAt: Long?,
+    onNow: () -> Unit,
+    onEditTime: () -> Unit,
+    showMealTip: Boolean,
+    onDismissMealTip: () -> Unit,
+    headerIconsModifier: Modifier,
     carbs: Double,
     approximate: Boolean,
     entries: List<MealEntry>,
@@ -329,19 +433,47 @@ private fun MealPanel(
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text(
-                // No start time: this meal is happening now, and the clock is two
-                // centimetres above in the status bar. History is where a time means
-                // something, and it prints its own.
                 "CURRENT MEAL",
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.weight(1f),
             )
+            if (startedAt != null) {
+                Text(
+                    " \u00B7 ",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                Text(
+                    DateFormat.getTimeInstance(DateFormat.SHORT).format(Date(startedAt)),
+                    style = MaterialTheme.typography.labelLarge,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(6.dp))
+                        .clickable(onClick = onEditTime)
+                        .padding(horizontal = 4.dp, vertical = 6.dp),
+                )
+                Text(
+                    "Now",
+                    style = MaterialTheme.typography.labelLarge,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onPrimaryContainer,
+                    modifier = Modifier
+                        .padding(start = 6.dp)
+                        .clip(RoundedCornerShape(50))
+                        .background(MaterialTheme.colorScheme.primaryContainer)
+                        .clickable(onClick = onNow)
+                        .padding(horizontal = 12.dp, vertical = 6.dp),
+                )
+            }
+            Spacer(Modifier.weight(1f))
+            Row(headerIconsModifier) {
             IconButton(onClick = onHistory) {
                 Icon(Icons.Default.History, contentDescription = "History")
             }
             IconButton(onClick = onSettings) {
                 Icon(Icons.Default.Settings, contentDescription = "Settings")
+            }
             }
         }
         Row(verticalAlignment = Alignment.CenterVertically) {
@@ -381,6 +513,13 @@ private fun MealPanel(
                     }
                 }
             }
+        }
+        if (showMealTip) {
+            TipCard(
+                "Logging before eating? Tap Now when you start, or tap the time to set it.",
+                onDismissMealTip,
+                Modifier.padding(top = 8.dp, end = 8.dp),
+            )
         }
     }
     // A hard edge, not a gap: above it is what you have eaten, below it is what you

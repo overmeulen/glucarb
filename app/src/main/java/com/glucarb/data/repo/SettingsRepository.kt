@@ -6,6 +6,7 @@ import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
+import androidx.datastore.preferences.core.stringSetPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
@@ -24,6 +25,12 @@ data class AppSettings(
      */
     val aiTargetChosen: Boolean = false,
     val aiPrompt: String = DEFAULT_AI_PROMPT,
+    /** The first-launch coach-mark tour has been finished or skipped. */
+    val tourDone: Boolean = false,
+    /** Set by "Show the tour again", so the tour shows even with a full catalog. */
+    val tourRequested: Boolean = false,
+    /** Ids of the one-time tips already dismissed. */
+    val seenTips: Set<String> = emptySet(),
 ) {
     companion object {
         const val DEFAULT_IDLE_MINUTES = 30
@@ -44,6 +51,9 @@ class SettingsRepository(private val context: Context) {
         val AI_LABEL = stringPreferencesKey("ai_target_label")
         val AI_CHOSEN = intPreferencesKey("ai_target_chosen")
         val AI_PROMPT = stringPreferencesKey("ai_prompt")
+        val TOUR_DONE = intPreferencesKey("tour_done")
+        val TOUR_REQUESTED = intPreferencesKey("tour_requested")
+        val SEEN_TIPS = stringSetPreferencesKey("seen_tips")
     }
 
     val settings: Flow<AppSettings> = context.dataStore.data.map { p ->
@@ -54,6 +64,9 @@ class SettingsRepository(private val context: Context) {
             aiTargetLabel = p[Keys.AI_LABEL],
             aiTargetChosen = (p[Keys.AI_CHOSEN] ?: 0) == 1,
             aiPrompt = p[Keys.AI_PROMPT] ?: AppSettings.DEFAULT_AI_PROMPT,
+            tourDone = (p[Keys.TOUR_DONE] ?: 0) == 1,
+            tourRequested = (p[Keys.TOUR_REQUESTED] ?: 0) == 1,
+            seenTips = p[Keys.SEEN_TIPS].orEmpty(),
         )
     }
 
@@ -82,6 +95,26 @@ class SettingsRepository(private val context: Context) {
     suspend fun setAiPrompt(prompt: String) {
         context.dataStore.edit {
             it[Keys.AI_PROMPT] = prompt.ifBlank { AppSettings.DEFAULT_AI_PROMPT }
+        }
+    }
+
+    suspend fun setTourDone() {
+        context.dataStore.edit {
+            it[Keys.TOUR_DONE] = 1
+            it.remove(Keys.TOUR_REQUESTED)
+        }
+    }
+
+    suspend fun markTipSeen(id: String) {
+        context.dataStore.edit { it[Keys.SEEN_TIPS] = it[Keys.SEEN_TIPS].orEmpty() + id }
+    }
+
+    /** "Show the tour again": the tour and every tip come back. */
+    suspend fun resetTutorial() {
+        context.dataStore.edit {
+            it.remove(Keys.TOUR_DONE)
+            it[Keys.TOUR_REQUESTED] = 1
+            it.remove(Keys.SEEN_TIPS)
         }
     }
 }

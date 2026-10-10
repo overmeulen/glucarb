@@ -64,8 +64,37 @@ class MealRepository(
         approximate: Boolean = item.approximateByDefault,
         now: Long = System.currentTimeMillis(),
     ): Long {
-        val resolved = CarbMath.resolve(item, input, asPortions)
         val meal = requireOpenMeal(now)
+        return insertCatalogEntry(meal, item, input, asPortions, approximate, now)
+    }
+
+    /**
+     * Adds an entry to a specific meal, typically a past one the user forgot to log into.
+     * Only the open meal counts as activity; a closed meal must not be reopened by an edit.
+     * Returns null if the meal no longer exists.
+     */
+    suspend fun addCatalogEntryToMeal(
+        mealId: Long,
+        item: FoodItem,
+        input: Double,
+        asPortions: Boolean,
+        approximate: Boolean = item.approximateByDefault,
+        now: Long = System.currentTimeMillis(),
+    ): Long? {
+        val meal = dao.getMeal(mealId) ?: return null
+        val createdAt = if (meal.isOpen) now else meal.startedAt
+        return insertCatalogEntry(meal, item, input, asPortions, approximate, createdAt)
+    }
+
+    private suspend fun insertCatalogEntry(
+        meal: Meal,
+        item: FoodItem,
+        input: Double,
+        asPortions: Boolean,
+        approximate: Boolean,
+        createdAt: Long,
+    ): Long {
+        val resolved = CarbMath.resolve(item, input, asPortions)
         val id = dao.insertEntry(
             MealEntry(
                 mealId = meal.id,
@@ -79,11 +108,31 @@ class MealRepository(
                 portionsValue = resolved.portionsValue,
                 carbs = resolved.carbs,
                 approximate = approximate,
-                createdAt = now,
+                createdAt = createdAt,
             )
         )
-        dao.touchMeal(meal.id, now)
+        if (meal.isOpen) dao.touchMeal(meal.id, createdAt)
         return id
+    }
+
+    /**
+     * Sets the time a meal is recorded as having started. Returns the previous value so
+     * the caller can offer an undo, or null if the meal does not exist.
+     */
+    suspend fun setMealStart(mealId: Long, startedAt: Long): Long? {
+        val meal = dao.getMeal(mealId) ?: return null
+        dao.setMealStart(mealId, startedAt)
+        return meal.startedAt
+    }
+
+    /**
+     * "Now": the meal is logged before it is eaten (insulin goes in first), so the real
+     * start is later than the first entry. Returns the meal id and its previous start.
+     */
+    suspend fun restampOpenMeal(now: Long = System.currentTimeMillis()): Pair<Long, Long>? {
+        val open = dao.getOpenMeal() ?: return null
+        dao.setMealStart(open.id, now)
+        return open.id to open.startedAt
     }
 
     /** Creates the placeholder row shown while the AI app is being consulted. */

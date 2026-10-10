@@ -66,12 +66,24 @@ object ItemRanker {
         return Math.pow(0.5, age / RECENCY_HALF_LIFE_MS)
     }
 
-    /** Simple case-insensitive substring match; word-start matches sort first. */
+    /**
+     * Case- and accent-insensitive substring match: "pat" finds "P\u00E2tes". Names that
+     * start with the query sort first.
+     */
     fun filter(items: List<FoodItem>, query: String): List<FoodItem> {
-        val q = query.trim().lowercase()
+        val q = normalize(query.trim())
         if (q.isEmpty()) return items
         return items
-            .filter { it.name.lowercase().contains(q) }
-            .sortedByDescending { it.name.lowercase().startsWith(q) }
+            .map { it to normalize(it.name) }
+            .filter { (_, name) -> name.contains(q) }
+            .sortedByDescending { (_, name) -> name.startsWith(q) }
+            .map { it.first }
     }
+
+    /** Lowercase, accents stripped (NFD then drop combining marks), ligatures expanded. */
+    fun normalize(text: String): String =
+        java.text.Normalizer.normalize(text.lowercase(), java.text.Normalizer.Form.NFD)
+            .filter { Character.getType(it) != Character.NON_SPACING_MARK.toInt() }
+            .replace("\u0153", "oe")
+            .replace("\u00E6", "ae")
 }

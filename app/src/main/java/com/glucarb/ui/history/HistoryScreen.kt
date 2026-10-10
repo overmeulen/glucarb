@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -19,6 +20,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.IosShare
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
@@ -61,10 +63,10 @@ import java.util.Locale
 @Composable
 fun HistoryScreen(
     onBack: () -> Unit,
+    onOpenMeal: (Long) -> Unit,
     viewModel: HistoryViewModel = hiltViewModel(),
 ) {
     val days by viewModel.days.collectAsStateWithLifecycle()
-    val editing by viewModel.editing.collectAsStateWithLifecycle()
     val exporting by viewModel.exporting.collectAsStateWithLifecycle()
     val context = LocalContext.current
     val snackbar = remember { SnackbarHostState() }
@@ -140,7 +142,7 @@ fun HistoryScreen(
                     }
                 }
                 items(day.meals, key = { "meal-${it.meal.id}" }) { meal ->
-                    MealCard(meal = meal, onEntryClick = viewModel::edit)
+                    MealRow(meal = meal, onClick = { onOpenMeal(meal.meal.id) })
                 }
             }
         }
@@ -162,79 +164,56 @@ fun HistoryScreen(
             startOfPickedDay = viewModel::startOfPickedDay,
         )
     }
-
-    editing?.let { entry ->
-        EditEntryDialog(
-            entry = entry,
-            onDismiss = viewModel::dismissEdit,
-            onDelete = { viewModel.deleteEntry(entry.id) },
-            onSave = { value -> viewModel.updateEntry(entry.id, value, asPortions = false) },
-        )
-    }
 }
 
 @Composable
-private fun MealCard(meal: MealWithEntries, onEntryClick: (MealEntry) -> Unit) {
+private fun MealRow(meal: MealWithEntries, onClick: () -> Unit) {
     val time = SimpleDateFormat("HH:mm", Locale.getDefault()).format(Date(meal.meal.startedAt))
-    Column(
-        Modifier
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier
             .fillMaxWidth()
             .padding(bottom = 8.dp)
             .clip(RoundedCornerShape(14.dp))
             .border(1.dp, MaterialTheme.colorScheme.outline, RoundedCornerShape(14.dp))
             .background(MaterialTheme.colorScheme.surface)
-            .padding(12.dp),
+            .clickable(onClick = onClick)
+            .padding(horizontal = 14.dp, vertical = 16.dp),
     ) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
+        Text(
+            time,
+            fontWeight = FontWeight.SemiBold,
+            modifier = Modifier.weight(1f, fill = false),
+        )
+        if (meal.meal.isOpen) {
             Text(
-                if (meal.meal.isOpen) "$time \u00B7 open" else time,
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.weight(1f),
-            )
-            Text(
-                CarbMath.formatCarbs(meal.totalCarbs, meal.isApproximate),
-                fontSize = 18.sp,
-                fontWeight = FontWeight.Bold,
-            )
-            Text(
-                " g",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                "open",
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onPrimaryContainer,
+                modifier = Modifier
+                    .padding(start = 8.dp)
+                    .clip(RoundedCornerShape(50))
+                    .background(MaterialTheme.colorScheme.primaryContainer)
+                    .padding(horizontal = 8.dp, vertical = 2.dp),
             )
         }
-        Column(verticalArrangement = Arrangement.spacedBy(2.dp), modifier = Modifier.padding(top = 6.dp)) {
-            meal.entries.forEach { entry ->
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clickable { onEntryClick(entry) }
-                        .padding(vertical = 4.dp),
-                ) {
-                    Text(
-                        entry.emoji?.let { "$it " }.orEmpty() + entry.label + "  " + entryAmount(entry),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.weight(1f),
-                    )
-                    Text(
-                        if (entry.aiPending) "pending"
-                        else "${CarbMath.formatCarbs(entry.carbs, entry.approximate)} g",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = if (entry.aiPending) MaterialTheme.colorScheme.tertiary
-                        else MaterialTheme.colorScheme.primary,
-                    )
-                }
-            }
-        }
+        Spacer(Modifier.weight(1f))
+        Text(
+            CarbMath.formatCarbs(meal.totalCarbs, meal.isApproximate),
+            fontSize = 18.sp,
+            fontWeight = FontWeight.Bold,
+        )
+        Text(
+            " g",
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        Icon(
+            Icons.AutoMirrored.Filled.KeyboardArrowRight,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
     }
-}
-
-private fun entryAmount(entry: MealEntry): String = when {
-    entry.foodItemId == null -> ""
-    entry.enteredAsPortions && entry.portionsValue != null ->
-        "${CarbMath.format(entry.portionsValue)} \u00D7"
-    else -> "${CarbMath.format(entry.quantity)} ${entry.unit.label}"
 }
 
 /**
@@ -258,57 +237,4 @@ private fun shareCsv(context: android.content.Context, uri: android.net.Uri) {
             },
         )
     }
-}
-
-@Composable
-private fun EditEntryDialog(
-    entry: MealEntry,
-    onDismiss: () -> Unit,
-    onDelete: () -> Unit,
-    onSave: (Double) -> Unit,
-) {
-    val isAdHoc = entry.foodItemId == null
-    var text by remember {
-        mutableStateOf(
-            if (isAdHoc) CarbMath.format(entry.carbs, 1) else CarbMath.format(entry.quantity, 2)
-        )
-    }
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text(entry.label) },
-        text = {
-            Column {
-                Text(
-                    if (isAdHoc) {
-                        "Ad-hoc estimate \u2014 edit the carb figure directly."
-                    } else {
-                        "Edit the amount in ${entry.unit.label}."
-                    },
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-                OutlinedTextField(
-                    value = text,
-                    onValueChange = { input ->
-                        text = input.replace(',', '.').filter { it.isDigit() || it == '.' }.take(7)
-                    },
-                    singleLine = true,
-                    suffix = { Text(if (isAdHoc) "g carbs" else entry.unit.label) },
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                    modifier = Modifier.padding(top = 10.dp),
-                )
-            }
-        },
-        confirmButton = {
-            TextButton(
-                onClick = { text.toDoubleOrNull()?.let(onSave) },
-                enabled = (text.toDoubleOrNull() ?: 0.0) > 0.0,
-            ) { Text("Save") }
-        },
-        dismissButton = {
-            TextButton(onClick = onDelete) {
-                Text("Delete", color = MaterialTheme.colorScheme.error)
-            }
-        },
-    )
 }

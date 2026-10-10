@@ -7,6 +7,8 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.imePadding
@@ -52,6 +54,7 @@ import kotlin.system.exitProcess
 @Composable
 fun SettingsScreen(
     onBack: () -> Unit,
+    onTourReset: () -> Unit = onBack,
     viewModel: SettingsViewModel = hiltViewModel(),
 ) {
     val settings by viewModel.settings.collectAsStateWithLifecycle()
@@ -60,13 +63,15 @@ fun SettingsScreen(
     val snackbar = remember { SnackbarHostState() }
     var restartPending by remember { mutableStateOf(false) }
 
+    var pendingRestore by remember { mutableStateOf<android.net.Uri?>(null) }
+
     val exportLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.CreateDocument(BackupManager.MIME_TYPE),
     ) { uri -> uri?.let(viewModel::exportTo) }
 
     val importLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.OpenDocument(),
-    ) { uri -> uri?.let(viewModel::importFrom) }
+    ) { uri -> pendingRestore = uri }
 
     LaunchedEffect(Unit) {
         viewModel.events.collect { event ->
@@ -139,25 +144,17 @@ fun SettingsScreen(
                 modifier = Modifier.fillMaxWidth().padding(top = 14.dp),
             )
             Row(
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                modifier = Modifier.padding(top = 4.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.End),
+                modifier = Modifier.fillMaxWidth().padding(top = 4.dp),
             ) {
+                TextButton(onClick = { prompt = AppSettings.DEFAULT_AI_PROMPT }) {
+                    Text("Reset to default")
+                }
                 TextButton(
                     onClick = { viewModel.setPrompt(prompt) },
                     enabled = prompt != settings.aiPrompt,
                 ) { Text("Save prompt") }
-                TextButton(onClick = { prompt = AppSettings.DEFAULT_AI_PROMPT }) {
-                    Text("Reset to default")
-                }
             }
-            Text(
-                "The prompt is also copied to the clipboard when you share a photo, " +
-                    "because most assistants ignore text sent alongside an image \u2014 " +
-                    "paste it there if it does not appear.",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(top = 6.dp),
-            )
 
             SectionTitle("Meals")
 
@@ -176,32 +173,68 @@ fun SettingsScreen(
 
             SectionTitle("Backup")
             Text(
-                "Your catalog, photos and history are backed up automatically by Android to " +
-                    "your Google account when device backup is enabled. One-off AI plate photos " +
-                    "are excluded to stay within the 25 MB backup quota.",
+                "Automatic: Android backs up your catalog, photos and history to your " +
+                    "Google account when device backup is on.",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            Text(
+                "Manual backup",
+                style = MaterialTheme.typography.titleSmall,
+                modifier = Modifier.padding(top = 14.dp),
+            )
+            Text(
+                "Save everything to a file you keep, or restore from one.",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
             Row(
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                modifier = Modifier.padding(top = 4.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.End),
+                modifier = Modifier.fillMaxWidth().padding(top = 4.dp),
             ) {
-                TextButton(
-                    onClick = { exportLauncher.launch(BackupManager.suggestedFileName()) },
-                    enabled = !busy,
-                ) { Text("Export backup") }
                 TextButton(
                     onClick = { importLauncher.launch(arrayOf(BackupManager.MIME_TYPE)) },
                     enabled = !busy,
-                ) { Text("Restore backup") }
+                ) { Text("Restore from file") }
+                TextButton(
+                    onClick = { exportLauncher.launch(BackupManager.suggestedFileName()) },
+                    enabled = !busy,
+                ) { Text("Save to file") }
             }
-            Text(
-                "Restoring replaces everything currently in the app.",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(bottom = 32.dp),
-            )
+
+            SectionTitle("Help")
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(MaterialTheme.colorScheme.surfaceVariant)
+                    .clickable {
+                        viewModel.resetTutorial()
+                        onTourReset()
+                    }
+                    .padding(14.dp),
+            ) {
+                Text("Show the tour again", modifier = Modifier.weight(1f))
+                Text("Replay", color = MaterialTheme.colorScheme.primary)
+            }
+            Spacer(Modifier.height(32.dp))
         }
+    }
+
+    pendingRestore?.let { uri ->
+        AlertDialog(
+            onDismissRequest = { pendingRestore = null },
+            title = { Text("Restore this backup?") },
+            text = { Text("It replaces everything currently in the app.") },
+            dismissButton = { TextButton(onClick = { pendingRestore = null }) { Text("Cancel") } },
+            confirmButton = {
+                TextButton(onClick = {
+                    pendingRestore = null
+                    viewModel.importFrom(uri)
+                }) { Text("Restore", color = MaterialTheme.colorScheme.error) }
+            },
+        )
     }
 
     if (restartPending) {

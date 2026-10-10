@@ -41,6 +41,10 @@ class SettingsViewModel @Inject constructor(
     private val _events = Channel<BackupEvent>(Channel.BUFFERED)
     val events: Flow<BackupEvent> = _events.receiveAsFlow()
 
+    fun resetTutorial() {
+        viewModelScope.launch { repo.resetTutorial() }
+    }
+
     fun setPrompt(value: String) {
         viewModelScope.launch { repo.setAiPrompt(value) }
     }

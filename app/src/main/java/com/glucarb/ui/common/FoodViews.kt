@@ -46,14 +46,16 @@ fun initialColor(seed: String): Color {
     return palette[abs(seed.hashCode()) % palette.size]
 }
 
-fun FoodItem.badgeText(): String =
-    if (hasPortions) {
+fun FoodItem.badgeText(): String {
+    val prefix = if (approximateByDefault) "~" else ""
+    return if (hasPortions) {
         // Carbs per portion, not the portion's weight: the weight was only ever an input
         // used to derive this number, and repeating it costs a scarce line of tile space.
-        "${CarbMath.formatCarbs(CarbMath.carbsPerPortion(this) ?: 0.0)} g/$portionName"
+        "$prefix${CarbMath.formatCarbs(CarbMath.carbsPerPortion(this) ?: 0.0)} g/$portionName"
     } else {
-        "${CarbMath.format(carbsPer100)}/100${unit.label}"
+        "$prefix${CarbMath.format(carbsPer100)}/100${unit.label}"
     }
+}
 
 @Composable
 fun ItemAvatar(

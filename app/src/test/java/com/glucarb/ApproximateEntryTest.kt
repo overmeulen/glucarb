@@ -94,7 +94,7 @@ class ApproximateEntryTest {
     }
 
     @Test
-    fun anItemsDefaultPresetsTheFlagAndTheChipOverridesIt() = runTest(dispatcher) {
+    fun anApproximateByDefaultItemCannotBeMadeExact() = runTest(dispatcher) {
         vm.openSheetFor(item("Restaurant pasta", approximate = true))
         advanceUntilIdle()
         assertTrue(requireNotNull(vm.sheet.value).approximate)
@@ -103,7 +103,7 @@ class ApproximateEntryTest {
         vm.commitSheet()
         advanceUntilIdle()
 
-        assertFalse(onlyEntry().approximate)
+        assertTrue(onlyEntry().approximate)
     }
 
     @Test

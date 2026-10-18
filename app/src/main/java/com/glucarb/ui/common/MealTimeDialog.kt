@@ -25,6 +25,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
+import com.glucarb.R
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -49,8 +51,8 @@ fun MealTimeDialog(
     showDate: Boolean,
     onDismiss: () -> Unit,
     onSave: (Long) -> Unit,
-    title: String = "Meal time",
-    confirmLabel: String = "Save",
+    title: String = stringResource(R.string.meal_time),
+    confirmLabel: String = stringResource(R.string.action_save),
     allowFuture: Boolean = true,
 ) {
     val cal = remember(initial) { Calendar.getInstance().apply { timeInMillis = initial } }
@@ -95,13 +97,13 @@ fun MealTimeDialog(
                     horizontalArrangement = Arrangement.Center,
                     modifier = Modifier.fillMaxWidth(),
                 ) {
-                    TimeField(hour, { hour = it.filter(Char::isDigit).take(2) }, "Hour")
+                    TimeField(hour, { hour = it.filter(Char::isDigit).take(2) }, stringResource(R.string.hour))
                     Text(" : ", fontSize = 28.sp)
-                    TimeField(minute, { minute = it.filter(Char::isDigit).take(2) }, "Minute")
+                    TimeField(minute, { minute = it.filter(Char::isDigit).take(2) }, stringResource(R.string.minute))
                 }
                 if (inFuture) {
                     Text(
-                        "This time is in the future.",
+                        stringResource(R.string.time_in_future),
                         color = MaterialTheme.colorScheme.error,
                         style = MaterialTheme.typography.bodySmall,
                         textAlign = TextAlign.Center,
@@ -116,7 +118,7 @@ fun MealTimeDialog(
                 onClick = { chosen?.let(onSave) },
             ) { Text(confirmLabel) }
         },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } },
+        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.action_cancel)) } },
     )
 
     if (pickingDate) {
@@ -144,9 +146,9 @@ fun MealTimeDialog(
                         }.timeInMillis
                     }
                     pickingDate = false
-                }) { Text("OK") }
+                }) { Text(stringResource(R.string.action_ok)) }
             },
-            dismissButton = { TextButton(onClick = { pickingDate = false }) { Text("Cancel") } },
+            dismissButton = { TextButton(onClick = { pickingDate = false }) { Text(stringResource(R.string.action_cancel)) } },
         ) { DatePicker(state = pickerState) }
     }
 }

@@ -68,9 +68,16 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.compose.ui.res.stringResource
+import com.glucarb.R
 import com.glucarb.data.MeasurementUnit
 import com.glucarb.domain.FoodIcon
 import com.glucarb.domain.FoodIcons
+import com.glucarb.domain.IconCategory
+import com.glucarb.domain.CarbMath
+import com.glucarb.ui.common.DecimalDisplayTransformation
+import com.glucarb.ui.common.UiText
+import com.glucarb.ui.common.asString
 import com.glucarb.domain.WebImageSearch
 import com.glucarb.ui.common.ItemAvatar
 
@@ -118,7 +125,7 @@ fun ItemEditScreen(
 
     LaunchedEffect(Unit) {
         viewModel.errors.collect {
-            snackbar.showSnackbar(it, duration = SnackbarDuration.Long)
+            snackbar.showSnackbar(it.asString(context), duration = SnackbarDuration.Long)
         }
     }
 
@@ -131,15 +138,15 @@ fun ItemEditScreen(
         snackbarHost = { SnackbarHost(snackbar) },
         topBar = {
             TopAppBar(
-                title = { Text(if (state.id == 0L) "New item" else "Edit item") },
+                title = { Text(stringResource(if (state.id == 0L) R.string.new_item else R.string.edit_item)) },
                 navigationIcon = {
                     IconButton(onClick = onDone) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.action_back))
                     }
                 },
                 actions = {
                     TextButton(onClick = viewModel::save, enabled = state.canSave) {
-                        Text("Save", fontWeight = FontWeight.Bold)
+                        Text(stringResource(R.string.action_save), fontWeight = FontWeight.Bold)
                     }
                 },
             )
@@ -162,7 +169,7 @@ fun ItemEditScreen(
             OutlinedTextField(
                 value = state.name,
                 onValueChange = viewModel::setName,
-                label = { Text("Name") },
+                label = { Text(stringResource(R.string.item_name)) },
                 singleLine = true,
                 modifier = Modifier
                     .fillMaxWidth()
@@ -203,11 +210,11 @@ fun ItemEditScreen(
                         // which is where the user needs to know how to send the picture back.
                         android.widget.Toast.makeText(
                             context,
-                            "Long-press a picture, then Share \u2192 Glucarb",
+                            context.getString(R.string.toast_web_share_back),
                             android.widget.Toast.LENGTH_LONG,
                         ).show()
                     } else {
-                        viewModel.reportError("No browser found to search with")
+                        viewModel.reportError(UiText.Res(R.string.error_no_browser))
                     }
                 },
                 onClear = {
@@ -216,7 +223,7 @@ fun ItemEditScreen(
             )
 
             Text(
-                "MEASUREMENT UNIT",
+                stringResource(R.string.measurement_unit_header),
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(top = 16.dp, bottom = 6.dp),
@@ -226,8 +233,9 @@ fun ItemEditScreen(
             OutlinedTextField(
                 value = state.carbsPer100,
                 onValueChange = viewModel::setCarbs,
-                label = { Text("Carbs per 100 ${state.unit.label}") },
+                label = { Text(stringResource(R.string.carbs_per_100, state.unit.label)) },
                 suffix = { Text("g") },
+                visualTransformation = DecimalDisplayTransformation(),
                 singleLine = true,
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                 modifier = Modifier.fillMaxWidth().padding(top = 14.dp),
@@ -243,9 +251,9 @@ fun ItemEditScreen(
                     .padding(horizontal = 14.dp, vertical = 10.dp),
             ) {
                 Column(Modifier.weight(1f)) {
-                    Text("Available in portions")
+                    Text(stringResource(R.string.available_in_portions))
                     Text(
-                        "Slices, units, spoons...",
+                        stringResource(R.string.portions_examples),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
@@ -261,15 +269,16 @@ fun ItemEditScreen(
                     OutlinedTextField(
                         value = state.portionLabel,
                         onValueChange = viewModel::setPortionLabel,
-                        label = { Text("Portion name") },
+                        label = { Text(stringResource(R.string.portion_name)) },
                         singleLine = true,
                         modifier = Modifier.weight(1f),
                     )
                     OutlinedTextField(
                         value = state.portionSize,
                         onValueChange = viewModel::setPortionSize,
-                        label = { Text("Weight of 1") },
+                        label = { Text(stringResource(R.string.weight_of_one)) },
                         suffix = { Text(state.unit.label) },
+                        visualTransformation = DecimalDisplayTransformation(),
                         singleLine = true,
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                         modifier = Modifier.weight(1f),
@@ -277,7 +286,13 @@ fun ItemEditScreen(
                 }
                 state.portionPreview?.let { preview ->
                     Text(
-                        preview,
+                        stringResource(
+                            R.string.portion_preview,
+                            preview.label,
+                            CarbMath.formatLocal(preview.size),
+                            preview.unit.label,
+                            CarbMath.formatLocal(preview.carbs),
+                        ),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.primary,
                         modifier = Modifier.padding(top = 8.dp),
@@ -295,9 +310,9 @@ fun ItemEditScreen(
                     .padding(horizontal = 14.dp, vertical = 10.dp),
             ) {
                 Column(Modifier.weight(1f)) {
-                    Text("Approximate by default")
+                    Text(stringResource(R.string.approximate_by_default))
                     Text(
-                        "For foods you can only guess, like restaurant dishes",
+                        stringResource(R.string.approximate_by_default_hint),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
@@ -313,10 +328,10 @@ fun ItemEditScreen(
                     onClick = viewModel::archive,
                     modifier = Modifier.padding(top = 20.dp),
                 ) {
-                    Text("Archive this item", color = MaterialTheme.colorScheme.error)
+                    Text(stringResource(R.string.archive_item), color = MaterialTheme.colorScheme.error)
                 }
                 Text(
-                    "Archiving hides it from the home screen. Past meals keep their numbers.",
+                    stringResource(R.string.archive_hint),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -373,13 +388,13 @@ private fun IdentityPicker(
         ) {
             if (state.photoPath != null) {
                 Text(
-                    "Using a photo",
+                    stringResource(R.string.using_a_photo),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             } else if (state.suggestions.isEmpty()) {
                 Text(
-                    "Type a name to get icon suggestions.",
+                    stringResource(R.string.type_name_for_icons),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -397,14 +412,14 @@ private fun IdentityPicker(
             // FlowRow: five labels no longer fit beside the preview on a 360dp phone, and
             // a clipped "Clear" is worse than a second line.
             FlowRow(horizontalArrangement = Arrangement.spacedBy(2.dp)) {
-                CompactTextButton("Icons", onBrowse)
+                CompactTextButton(stringResource(R.string.action_icons), onBrowse)
                 // Camera first: an item is almost always created with the food in front of you,
                 // so picking from the gallery is the exception, not the normal path.
-                CompactTextButton("Camera", onTakePhoto)
-                CompactTextButton("Gallery", onPickPhoto)
-                CompactTextButton("Web", onSearchWeb)
+                CompactTextButton(stringResource(R.string.action_camera), onTakePhoto)
+                CompactTextButton(stringResource(R.string.action_gallery), onPickPhoto)
+                CompactTextButton(stringResource(R.string.action_web), onSearchWeb)
                 if (state.photoPath != null || state.emoji != null) {
-                    CompactTextButton("Clear", onClear)
+                    CompactTextButton(stringResource(R.string.action_clear), onClear)
                 }
             }
         }
@@ -462,13 +477,13 @@ private fun IconBrowserSheet(selected: String?, onSelect: (String) -> Unit, onDi
             OutlinedTextField(
                 value = query,
                 onValueChange = { query = it },
-                label = { Text("Search icons") },
+                label = { Text(stringResource(R.string.search_icons)) },
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth(),
             )
             if (results.isEmpty()) {
                 Text(
-                    "No icon matches that search.",
+                    stringResource(R.string.no_icon_match),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(top = 16.dp),
@@ -478,9 +493,9 @@ private fun IconBrowserSheet(selected: String?, onSelect: (String) -> Unit, onDi
             // Categories are only worth showing while browsing the whole set; once the list is
             // filtered the headers are just noise between two or three results.
             val groups = if (query.isBlank()) {
-                FoodIcons.byCategory.map { (category, icons) -> category.label to icons }
+                FoodIcons.byCategory.map { (category, icons) -> stringResource(category.titleRes()) to icons }
             } else {
-                listOf("Results" to results)
+                listOf(stringResource(R.string.icon_results) to results)
             }
             LazyVerticalGrid(
                 columns = GridCells.Adaptive(54.dp),
@@ -491,7 +506,7 @@ private fun IconBrowserSheet(selected: String?, onSelect: (String) -> Unit, onDi
                 groups.forEach { (title, icons) ->
                     item(span = { GridItemSpan(maxLineSpan) }, key = "header-$title") {
                         Text(
-                            title.uppercase(),
+                            title.uppercase(java.util.Locale.getDefault()),
                             style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier.padding(top = 6.dp),
@@ -511,6 +526,18 @@ private fun IconBrowserSheet(selected: String?, onSelect: (String) -> Unit, onDi
     }
 }
 
+/** The visible header of an icon category; [IconCategory.label] stays the English key. */
+private fun IconCategory.titleRes(): Int = when (this) {
+    IconCategory.FRUIT -> R.string.icon_category_fruit
+    IconCategory.VEGETABLE -> R.string.icon_category_vegetable
+    IconCategory.GRAIN -> R.string.icon_category_grain
+    IconCategory.DISH -> R.string.icon_category_dish
+    IconCategory.PROTEIN -> R.string.icon_category_protein
+    IconCategory.SWEET -> R.string.icon_category_sweet
+    IconCategory.DRINK -> R.string.icon_category_drink
+    IconCategory.OTHER -> R.string.icon_category_other
+}
+
 @Composable
 private fun UnitToggle(selected: MeasurementUnit, onSelect: (MeasurementUnit) -> Unit) {
     Row(
@@ -520,7 +547,10 @@ private fun UnitToggle(selected: MeasurementUnit, onSelect: (MeasurementUnit) ->
             .background(MaterialTheme.colorScheme.surfaceVariant)
             .padding(3.dp),
     ) {
-        listOf(MeasurementUnit.G to "Grams (g)", MeasurementUnit.ML to "Millilitres (ml)")
+        listOf(
+            MeasurementUnit.G to stringResource(R.string.unit_grams_long),
+            MeasurementUnit.ML to stringResource(R.string.unit_millilitres_long),
+        )
             .forEach { (unit, label) ->
                 val on = unit == selected
                 Text(

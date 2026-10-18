@@ -23,7 +23,10 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.res.stringResource
 import coil.compose.AsyncImage
+import com.glucarb.R
+import com.glucarb.domain.CarbMath
 import java.io.File
 
 /**
@@ -43,13 +46,11 @@ fun AdHocSheet(
     ModalBottomSheet(onDismissRequest = onDismiss, sheetState = sheetState) {
         Column(Modifier.padding(horizontal = 16.dp).padding(bottom = 20.dp)) {
 
-            Text("AI plate estimate", style = MaterialTheme.typography.titleMedium)
+            Text(stringResource(R.string.ai_plate_estimate), style = MaterialTheme.typography.titleMedium)
             Text(
-                if (state.fromClipboard) {
-                    "Found a number in your clipboard \u2014 check it and confirm."
-                } else {
-                    "Type the number the assistant gave you."
-                },
+                stringResource(
+                    if (state.fromClipboard) R.string.adhoc_found_in_clipboard else R.string.adhoc_type_number,
+                ),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(bottom = 12.dp),
@@ -59,7 +60,7 @@ fun AdHocSheet(
             if (file != null) {
                 AsyncImage(
                     model = file,
-                    contentDescription = "Photo of the plate",
+                    contentDescription = stringResource(R.string.cd_plate_photo),
                     contentScale = ContentScale.Crop,
                     modifier = Modifier
                         .fillMaxWidth()
@@ -74,14 +75,14 @@ fun AdHocSheet(
             ) {
                 Row(verticalAlignment = Alignment.Bottom) {
                     Text(
-                        state.input.ifEmpty { "0" },
+                        CarbMath.localizeDecimal(state.input.ifEmpty { "0" }),
                         fontSize = 40.sp,
                         fontWeight = FontWeight.Bold,
                         color = if (state.fromClipboard) MaterialTheme.colorScheme.primary
                         else MaterialTheme.colorScheme.onSurface,
                     )
                     Text(
-                        " g carbs",
+                        " " + stringResource(R.string.g_carbs),
                         fontSize = 15.sp,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.padding(bottom = 6.dp),
@@ -106,14 +107,14 @@ fun AdHocSheet(
                         contentColor = MaterialTheme.colorScheme.onError,
                     ),
                 ) {
-                    Text("Discard", fontWeight = FontWeight.Bold)
+                    Text(stringResource(R.string.action_discard), fontWeight = FontWeight.Bold)
                 }
                 Button(
                     onClick = onCommit,
                     enabled = (state.input.toDoubleOrNull() ?: 0.0) > 0.0,
                     modifier = Modifier.weight(1f),
                 ) {
-                    Text("Confirm & add", fontWeight = FontWeight.Bold)
+                    Text(stringResource(R.string.action_confirm_add), fontWeight = FontWeight.Bold)
                 }
             }
         }

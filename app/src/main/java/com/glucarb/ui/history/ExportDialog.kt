@@ -20,6 +20,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
+import com.glucarb.R
 import androidx.compose.ui.unit.dp
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -58,28 +60,26 @@ fun ExportDialog(
                         picking = false
                     },
                     enabled = state.selectedDateMillis != null,
-                ) { Text("Use this date") }
+                ) { Text(stringResource(R.string.use_this_date)) }
             },
-            dismissButton = { TextButton(onClick = { picking = false }) { Text("Cancel") } },
+            dismissButton = { TextButton(onClick = { picking = false }) { Text(stringResource(R.string.action_cancel)) } },
         ) { DatePicker(state = state) }
         return
     }
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Export meals") },
+        title = { Text(stringResource(R.string.export_meals)) },
         text = {
             Column {
                 Text(
-                    "A CSV file with one row per item eaten \u2014 meal time, item, grams " +
-                        "of carbs and whether it was approximate \u2014 ready to hand to an " +
-                        "assistant for analysis.",
+                    stringResource(R.string.export_description),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
                 ExportRange.entries.forEach { range ->
                     RangeRow(
-                        label = range.label,
+                        label = stringResource(range.label),
                         selected = customFrom == null && selected == range,
                         onClick = {
                             selected = range
@@ -88,14 +88,15 @@ fun ExportDialog(
                     )
                 }
                 RangeRow(
-                    label = customFrom?.let { "From ${dayLabel(it)}" } ?: "From a date\u2026",
+                    label = customFrom?.let { stringResource(R.string.range_from_date, dayLabel(it)) }
+                        ?: stringResource(R.string.range_from_a_date),
                     selected = customFrom != null,
                     onClick = { picking = true },
                 )
             }
         },
-        confirmButton = { TextButton(onClick = { onShare(from) }) { Text("Share") } },
-        dismissButton = { TextButton(onClick = { onSave(from) }) { Text("Save file") } },
+        confirmButton = { TextButton(onClick = { onShare(from) }) { Text(stringResource(R.string.action_share)) } },
+        dismissButton = { TextButton(onClick = { onSave(from) }) { Text(stringResource(R.string.save_file)) } },
     )
 }
 

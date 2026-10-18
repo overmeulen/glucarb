@@ -1,0 +1,528 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Glucarb &mdash; Mockup</title>
+<style>
+:root{
+  --bg:#12141a; --surface:#1b1e26; --surface2:#242833; --line:#2f3442;
+  --txt:#eef1f7; --dim:#9aa3b5; --acc:#5bd08a; --acc2:#3aa870; --warn:#f0a742;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#0a0b0e;color:var(--txt);font:14px/1.4 -apple-system,Segoe UI,Roboto,sans-serif;padding:28px 20px 60px}
+h1{font-size:20px;font-weight:600;margin-bottom:4px}
+.sub{color:var(--dim);font-size:13px;margin-bottom:26px}
+.rail{display:flex;gap:26px;overflow-x:auto;padding-bottom:20px;align-items:flex-start}
+.screen{flex:0 0 auto}
+.cap{color:var(--dim);font-size:12px;margin:0 0 8px 4px;letter-spacing:.4px;text-transform:uppercase}
+.cap b{color:var(--acc);font-weight:600}
+.phone{width:300px;height:620px;background:var(--bg);border-radius:30px;border:8px solid #23262f;
+  position:relative;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 18px 40px rgba(0,0,0,.55)}
+.status{height:24px;display:flex;align-items:center;justify-content:space-between;padding:0 14px;font-size:10px;color:var(--dim);flex:0 0 auto}
+
+/* The meal band: total on the left, what is in the meal on the right, then a hard
+   edge. Above it is what you have eaten, below it is what you might add. */
+.hero{padding:8px 10px 11px 14px;flex:0 0 auto;background:rgba(255,255,255,.035);border-bottom:1px solid var(--line)}
+.hero .top{display:flex;align-items:center;gap:4px;margin-bottom:2px}
+.hero .lbl{color:var(--dim);font-size:11px;text-transform:uppercase;letter-spacing:.6px;flex:1}
+.hero .ic2{color:var(--dim);font-size:13px;padding:0 3px}
+.hero .band{display:flex;align-items:center;gap:12px}
+.hero .tot{flex:0 0 auto}
+.hero .big{font-size:60px;font-weight:700;line-height:.98;letter-spacing:-2.5px}
+.hero .un{font-size:12px;color:var(--dim);margin-top:1px}
+.mealgrid{flex:1;min-width:0;display:grid;grid-template-columns:1fr 1fr;gap:5px;max-height:104px;overflow:hidden}
+.mealgrid.one{grid-template-columns:1fr}
+.chipm{background:var(--surface);border:1px solid var(--line);border-radius:9px;padding:5px 7px;font-size:11px;
+  display:flex;gap:4px;align-items:center;min-width:0;white-space:nowrap;overflow:hidden}
+.chipm span{overflow:hidden;text-overflow:ellipsis}
+.chipm b{color:var(--acc);font-weight:600;margin-left:auto;padding-left:4px}
+.chipm.pending{border-color:var(--warn);color:var(--warn)}
+.chipm.pending b{color:var(--warn)}
+
+.search{margin:12px 14px 10px;background:var(--surface);border:1px solid var(--line);border-radius:12px;
+  padding:9px 12px;color:var(--dim);font-size:13px;display:flex;gap:8px;align-items:center;flex:0 0 auto}
+.toggle{display:flex;gap:2px;background:var(--surface2);border-radius:8px;padding:2px;margin-left:auto}
+.toggle div{padding:3px 7px;border-radius:6px;font-size:10px;color:var(--dim)}
+.toggle div.on{background:var(--line);color:var(--txt)}
+
+.scroll{flex:1;overflow:hidden;padding:0 14px 12px}
+.sect{color:var(--dim);font-size:10px;text-transform:uppercase;letter-spacing:.6px;margin:4px 0 8px}
+.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.tile{aspect-ratio:1;border-radius:13px;position:relative;overflow:hidden;background:var(--surface2);
+  display:flex;align-items:flex-end;border:1px solid var(--line)}
+.tile .em{position:absolute;inset:0 0 18% 0;display:flex;align-items:center;justify-content:center;font-size:34px;opacity:.92}
+.tile .nm{position:relative;width:100%;padding:14px 6px 5px;font-size:10px;font-weight:600;text-align:center;
+  background:linear-gradient(transparent,rgba(0,0,0,.85));z-index:2;line-height:1.15}
+.tile .badge{position:absolute;top:5px;right:5px;background:rgba(0,0,0,.6);border-radius:5px;font-size:8px;padding:2px 4px;z-index:3;color:var(--acc)}
+.tile.letter{background:linear-gradient(135deg,#3d4a63,#2a3346)}
+.tile.letter .em{font-size:30px;font-weight:700;color:#93a4c7}
+
+.lrow{display:flex;align-items:center;gap:10px;padding:9px 4px;border-bottom:1px solid var(--line)}
+.lthumb{width:38px;height:38px;border-radius:9px;background:var(--surface2);display:flex;align-items:center;justify-content:center;font-size:20px;flex:0 0 auto}
+.lname{font-size:13px;font-weight:500}
+.lmeta{font-size:10px;color:var(--dim);margin-top:2px}
+.ladd{margin-left:auto;color:var(--acc);font-size:18px}
+
+/* ---- icon picker ---- */
+.idrow{display:flex;gap:12px;align-items:center;margin:12px 0 2px}
+.avatar{width:74px;height:74px;border-radius:18px;background:linear-gradient(135deg,#3d4a63,#2a3346);
+  display:flex;align-items:center;justify-content:center;font-size:38px;flex:0 0 auto}
+.sugg{display:flex;gap:6px;overflow:hidden}
+.sc{width:36px;height:36px;border-radius:50%;background:var(--surface2);border:1px solid var(--line);
+  display:flex;align-items:center;justify-content:center;font-size:18px;flex:0 0 auto}
+.sc.on{border:2px solid var(--acc);background:rgba(126,231,168,.16)}
+.idbtns{display:flex;gap:2px;margin-top:6px}
+.idbtns span{color:var(--acc);font-size:12px;padding:4px 6px}
+.sheet{margin-top:auto;background:var(--surface);border-radius:18px 18px 0 0;border-top:1px solid var(--line);padding:12px 14px 16px}
+.sheet .grab{width:34px;height:4px;border-radius:2px;background:var(--line);margin:0 auto 12px}
+.icongrid{display:grid;grid-template-columns:repeat(6,1fr);gap:7px;margin-top:8px}
+.icongrid .sc{width:100%;aspect-ratio:1;height:auto;font-size:19px}
+
+/* ---- action buttons ---- */
+.vphone{height:330px;padding-top:14px}
+.vgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;padding:0 14px}
+.vfade{position:absolute;left:0;right:0;bottom:0;height:120px;
+  background:linear-gradient(to bottom,rgba(18,20,26,0) 0%,var(--bg) 62%)}
+.vrow{position:absolute;right:14px;bottom:16px;display:flex;align-items:center;gap:12px}
+.vcirc{width:56px;height:56px;border-radius:18px;display:flex;align-items:center;justify-content:center;font-size:24px}
+.vcirc.acc{background:var(--acc);color:#0c2417;font-weight:300;font-size:28px;box-shadow:0 6px 18px rgba(91,208,138,.35)}
+.vcirc.ghost{background:var(--surface2);color:var(--acc);border:1px solid var(--line)}
+.vnote{width:300px;margin-top:10px;font-size:11px;line-height:1.55;color:var(--dim)}
+.vnote b{color:var(--txt)}
+.ic{width:24px;height:24px;fill:currentColor;display:block}
+.iconpanel{width:360px;display:flex;flex-direction:column;gap:10px}
+.iconrow{display:flex;align-items:center;gap:12px;padding:12px;border-radius:14px;
+  background:var(--surface);border:1px solid var(--line)}
+.iconrow.good{border-color:var(--acc);background:rgba(91,208,138,.07)}
+.iconrow.bad{opacity:.62}
+.iconmeta{font-size:11px;line-height:1.5;color:var(--dim);margin-left:4px}
+.iconmeta b{color:var(--txt);font-size:12px}
+.iconrow.good .iconmeta b{color:var(--acc)}
+
+.scrim{position:absolute;inset:0;background:rgba(0,0,0,.6);z-index:5}
+.sheet{position:absolute;left:0;right:0;bottom:0;background:var(--surface);border-radius:22px 22px 0 0;
+  padding:12px 16px 18px;z-index:6;border-top:1px solid var(--line)}
+.grab{width:34px;height:4px;background:var(--line);border-radius:3px;margin:0 auto 12px}
+.sh-head{display:flex;gap:10px;align-items:center;margin-bottom:14px}
+.sh-head .th{width:42px;height:42px;border-radius:11px;background:var(--surface2);display:flex;align-items:center;justify-content:center;font-size:22px}
+.sh-head .t{font-size:15px;font-weight:600}
+.sh-head .s{font-size:11px;color:var(--dim)}
+.amount{text-align:center;margin:2px 0 10px}
+.amount .v{font-size:38px;font-weight:700;letter-spacing:-1px}
+.amount .u{font-size:15px;color:var(--dim);margin-left:5px;font-weight:500}
+.amount .c{font-size:12px;color:var(--acc);margin-top:3px;font-weight:600}
+.chips{display:flex;gap:6px;justify-content:center;margin-bottom:12px;flex-wrap:wrap}
+.chip{background:var(--surface2);border:1px solid var(--line);border-radius:18px;padding:6px 12px;font-size:12px}
+.chip.on{background:rgba(91,208,138,.16);border-color:var(--acc);color:var(--acc);font-weight:600}
+.seg{display:flex;background:var(--surface2);border-radius:9px;padding:2px;margin:0 auto 12px;width:170px}
+.seg div{flex:1;text-align:center;padding:5px;font-size:11px;border-radius:7px;color:var(--dim)}
+.seg div.on{background:var(--line);color:var(--txt);font-weight:600}
+.pad{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-bottom:12px}
+.key{background:var(--surface2);border-radius:11px;padding:11px 0;text-align:center;font-size:18px;font-weight:500}
+.key.f{color:var(--dim);font-size:15px}
+.cta{display:flex;gap:8px}
+.btn{flex:1;background:var(--acc);color:#0c2417;font-weight:700;text-align:center;padding:13px;border-radius:13px;font-size:14px}
+.btn.ghost{flex:0 0 52px;background:var(--surface2);color:var(--dim);font-weight:500}
+.btn.danger{background:var(--bad,#e5484d);color:#fff}
+.opt{display:flex;align-items:center;gap:9px;padding:8px 2px;font-size:13px}
+.opt .rad{width:16px;height:16px;border-radius:50%;border:2px solid var(--line);flex:0 0 auto}
+.opt.on .rad{border-color:var(--acc);box-shadow:inset 0 0 0 3px var(--acc)}
+.opt.on{color:var(--acc);font-weight:600}
+.csv{background:#0d0f14;border:1px solid var(--line);border-radius:9px;padding:8px;font-family:ui-monospace,Menlo,Consolas,monospace;
+  font-size:8.5px;line-height:1.7;color:var(--dim);white-space:pre;overflow:hidden}
+.csv b{color:var(--acc);font-weight:600}
+
+.snack{position:absolute;left:12px;right:12px;bottom:14px;background:#eef1f7;color:#12141a;border-radius:11px;
+  padding:12px 14px;display:flex;align-items:center;font-size:12px;font-weight:500;z-index:7;box-shadow:0 8px 22px rgba(0,0,0,.4)}
+.snack b{margin-left:auto;color:var(--acc2);font-weight:700;text-transform:uppercase;font-size:11px;letter-spacing:.5px}
+
+.field{margin-bottom:12px}
+.field label{display:block;font-size:10px;color:var(--dim);text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px}
+.input{background:var(--surface);border:1px solid var(--line);border-radius:11px;padding:11px 12px;font-size:14px}
+.sw{display:flex;align-items:center;gap:10px;background:var(--surface);border:1px solid var(--line);border-radius:11px;padding:11px 12px;margin-bottom:12px}
+.sw .k{font-size:13px}
+.sw .d{font-size:10px;color:var(--dim);margin-top:2px}
+.knob{margin-left:auto;width:38px;height:22px;border-radius:12px;background:var(--acc);position:relative;flex:0 0 auto}
+.knob:after{content:"";position:absolute;width:17px;height:17px;border-radius:50%;background:#fff;top:2.5px;right:2.5px}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+.hint{font-size:10px;color:var(--dim);margin-top:-6px;margin-bottom:12px;line-height:1.4}
+
+.top{display:flex;align-items:center;gap:10px;padding:10px 14px 12px;font-size:16px;font-weight:600;flex:0 0 auto}
+.top .x{color:var(--dim);font-weight:400;font-size:19px}
+.top .save{margin-left:auto;color:var(--acc);font-size:13px;font-weight:600}
+
+.daygrp{margin-bottom:14px}
+.dayh{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:7px}
+.dayh .d{font-size:12px;font-weight:600}
+.dayh .t{font-size:11px;color:var(--dim)}
+.mealcard{background:var(--surface);border:1px solid var(--line);border-radius:13px;padding:11px 12px;margin-bottom:7px}
+.mealcard .h{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
+.mealcard .tm{font-size:11px;color:var(--dim)}
+.mealcard .tot{font-size:17px;font-weight:700}
+.mealcard .tot span{font-size:11px;color:var(--dim);font-weight:500}
+.mealcard .it{font-size:11px;color:var(--dim);line-height:1.6}
+
+.aicard{background:var(--surface);border:1px solid var(--warn);border-radius:14px;padding:12px;margin-bottom:12px}
+.aicard .t{font-size:12px;font-weight:600;color:var(--warn);margin-bottom:8px}
+.aiphoto{height:88px;border-radius:10px;background:linear-gradient(135deg,#4a3a2a,#33291f);display:flex;align-items:center;justify-content:center;font-size:36px;margin-bottom:10px}
+.parse{background:rgba(91,208,138,.12);border:1px solid var(--acc);border-radius:10px;padding:10px;font-size:11px;color:var(--acc);margin-bottom:10px}
+.parse b{font-size:18px;display:block;margin-top:3px}
+.empty{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:0 30px;text-align:center}
+.empty .ico{font-size:46px;opacity:.5}
+.empty .t{font-size:16px;font-weight:600}
+.empty .s{font-size:12px;color:var(--dim);line-height:1.5}
+.note{max-width:1000px;margin-top:26px;padding:16px 18px;background:var(--surface);border:1px solid var(--line);border-radius:14px;font-size:13px;color:var(--dim);line-height:1.7}
+.note b{color:var(--txt)}
+.cbx{display:flex;align-items:center;gap:7px;font-size:12px;flex:0 0 auto;padding-right:4px}
+.cbx i{width:16px;height:16px;border-radius:3px;border:2px solid var(--dim);display:inline-block;box-sizing:border-box}
+.cbx.on i{background:var(--acc);border-color:var(--acc);position:relative}
+.cbx.on i:after{content:"";position:absolute;left:4px;top:0;width:4px;height:9px;border:solid #12141a;border-width:0 2px 2px 0;transform:rotate(45deg)}
+.cta.inline{align-items:center}
+.approx{display:inline-block;background:var(--surface2);border:1px solid var(--line);border-radius:18px;padding:6px 12px;font-size:12px;margin:0 0 10px}
+.approx.on{background:rgba(91,208,138,.16);border-color:var(--acc);color:var(--acc);font-weight:600}
+.new{outline:2px dashed rgba(91,208,138,.75);outline-offset:3px;border-radius:12px}
+.knob.off{background:var(--line)}
+.knob.off:after{right:auto;left:2.5px}
+.browser{background:#f2f3f5;color:#202124;flex:1;display:flex;flex-direction:column;position:relative}
+.burl{margin:6px 10px;background:#fff;border-radius:18px;padding:7px 12px;font-size:11px;color:#5f6368;border:1px solid #dadce0}
+.bgrid{display:grid;grid-template-columns:1fr 1fr;gap:6px;padding:4px 10px}
+.bimg{aspect-ratio:1;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:44px;background:#e1e4e8}
+.bmenu{position:absolute;left:34px;right:34px;top:210px;background:#fff;border-radius:12px;box-shadow:0 10px 30px rgba(0,0,0,.35);padding:6px 0;font-size:13px;z-index:6}
+.bmenu div{padding:10px 16px}
+.bmenu .hl{background:#e8f0fe;font-weight:600}
+.toast{position:absolute;left:30px;right:30px;bottom:26px;background:#3c4043;color:#fff;border-radius:18px;padding:9px 12px;font-size:11px;text-align:center;z-index:7}
+.shares{position:absolute;left:0;right:0;bottom:0;background:#fff;border-radius:18px 18px 0 0;padding:14px 12px 20px;z-index:8;box-shadow:0 -6px 24px rgba(0,0,0,.3)}
+.shares .row{display:flex;justify-content:space-around;margin-top:12px}
+.shares .app{display:flex;flex-direction:column;align-items:center;gap:5px;font-size:10px;color:#3c4043;width:60px;text-align:center}
+.shares .ico{width:42px;height:42px;border-radius:12px;background:#e1e4e8;display:flex;align-items:center;justify-content:center;font-size:20px}
+.shares .app.hl .ico{background:#12141a;color:#5bd08a;outline:3px solid #5bd08a}
+.hero .mt{font-size:12px;color:var(--txt);display:flex;align-items:center;gap:6px;margin-right:6px}
+.hero .mt .tv{border-bottom:1px dotted var(--dim)}
+.now{background:rgba(91,208,138,.16);color:var(--acc);border:1px solid var(--acc);border-radius:10px;padding:1px 8px;font-size:11px;font-weight:600}
+.arow{display:flex;align-items:center;justify-content:center;gap:12px}
+.apx{width:34px;height:34px;padding:0 !important;display:flex;align-items:center;justify-content:center;font-size:22px !important;font-weight:700;border-radius:50% !important;background:var(--surface2);border:1px solid var(--line);border-radius:16px;padding:5px 10px;font-size:12px;color:var(--dim);white-space:nowrap}
+.apx.on{background:rgba(91,208,138,.16);border-color:var(--acc);color:var(--acc);font-weight:600}
+.tme{border-bottom:1px dotted var(--dim)}
+.addit{margin-top:7px;padding-top:7px;border-top:1px solid var(--line);font-size:11px;color:var(--acc);font-weight:600}
+.dlg{position:absolute;left:18px;right:18px;top:150px;background:var(--surface);border:1px solid var(--line);border-radius:22px;padding:18px 16px 14px;z-index:6}
+.dlg .tt{font-size:15px;font-weight:600;margin-bottom:12px}
+.dlg .fld{background:var(--surface2);border:1px solid var(--line);border-radius:10px;padding:9px 12px;font-size:14px;margin-bottom:9px;display:flex;justify-content:space-between}
+.dlg .fld span{color:var(--dim);font-size:11px;align-self:center}
+.tpick{display:flex;align-items:center;justify-content:center;gap:6px;margin:6px 0 14px}
+.tpick div{background:var(--surface2);border-radius:12px;padding:8px 14px;font-size:40px;font-weight:600}
+.tpick div.on{background:rgba(91,208,138,.18);color:var(--acc);outline:2px solid var(--acc)}
+.dlg .acts{display:flex;justify-content:flex-end;gap:22px;font-size:13px;font-weight:600;color:var(--acc);margin-top:6px}
+.dlg .acts .c{color:var(--dim)}
+.mrow{display:flex;align-items:center;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:11px 12px;margin-bottom:6px}
+.mrow .tm{font-size:14px;flex:1}
+.mrow .tm i{font-style:normal;font-size:10px;color:var(--acc);border:1px solid var(--acc);border-radius:8px;padding:0 5px;margin-left:6px;vertical-align:1px}
+.mrow .tot{font-size:16px;font-weight:700}
+.mrow .tot span{font-size:11px;color:var(--dim);font-weight:500}
+.mrow .chev{color:var(--dim);margin-left:10px;font-size:16px}
+.mhead{padding:6px 16px 14px;border-bottom:1px solid var(--line)}
+.mhead .tm{font-size:13px;color:var(--dim)}
+.mhead .tm b{color:var(--txt);font-size:15px;font-weight:600;border-bottom:1px dotted var(--dim);margin-left:4px}
+.mhead .big{font-size:44px;font-weight:700;letter-spacing:-1.5px;margin-top:4px}
+.mhead .big span{font-size:13px;color:var(--dim);font-weight:500;letter-spacing:0;margin-left:4px}
+.erow{display:flex;align-items:center;gap:10px;padding:10px 4px;border-bottom:1px solid var(--line)}
+.erow .lthumb{width:36px;height:36px}
+.erow .nm{font-size:13px;font-weight:600}
+.erow .q{font-size:11px;color:var(--dim)}
+.erow .c{margin-left:auto;font-size:14px;font-weight:700}
+.addbtn{margin:12px 0 0;border:1px dashed var(--acc);color:var(--acc);border-radius:12px;padding:11px;text-align:center;font-size:13px;font-weight:600}
+.spot{position:absolute;border-radius:20px;box-shadow:0 0 0 999px rgba(0,0,0,.74);z-index:7;outline:2px solid var(--acc);outline-offset:3px}
+.coach{position:absolute;left:16px;right:16px;z-index:8;background:#eef1f7;color:#12141a;border-radius:16px;padding:14px 14px 10px}
+.coach .ct{font-size:14px;font-weight:700;margin-bottom:4px}
+.coach .cs{font-size:12px;line-height:1.45;color:#3a3f4b}
+.coach .cf{display:flex;align-items:center;margin-top:10px;font-size:12px;font-weight:700}
+.coach .cf .dots{flex:1;display:flex;gap:4px}
+.coach .cf .dots i{width:6px;height:6px;border-radius:50%;background:#c3c8d3}
+.coach .cf .dots i.on{background:#2e9e5f}
+.coach .cf .sk{color:#6b7280;margin-right:18px}
+.coach .cf .nx{color:#1f8a50}
+.tipb{position:absolute;z-index:8;background:#eef1f7;color:#12141a;border-radius:12px;padding:9px 11px;font-size:11.5px;line-height:1.4;box-shadow:0 8px 24px rgba(0,0,0,.45)}
+.tipb b.ok{display:block;text-align:right;color:#1f8a50;font-size:11px;margin-top:5px;text-transform:uppercase;letter-spacing:.4px}
+.tipb:after{content:"";position:absolute;width:12px;height:12px;background:#eef1f7;transform:rotate(45deg)}
+.tipb.up:after{top:-5px;left:var(--ax,20px)}
+.tipb.down:after{bottom:-5px;left:var(--ax,20px)}
+.set{padding:4px 16px 20px;overflow:hidden;flex:1}
+.set .sec{font-size:11px;color:var(--acc);font-weight:700;text-transform:uppercase;letter-spacing:.6px;margin:14px 0 7px}
+.set .card{background:var(--surface2);border-radius:12px;padding:10px 12px;display:flex;align-items:center;font-size:13px}
+.set .card .sm{font-size:11px;color:var(--dim)}
+.set .card .act{margin-left:auto;color:var(--acc);font-weight:600;font-size:12px}
+.set .fieldx{border:1px solid var(--line);border-radius:8px;padding:8px 10px;font-size:11px;color:var(--dim);margin-top:8px;line-height:1.4}
+.set .fieldx span{display:block;font-size:9px;color:var(--acc);margin-bottom:2px}
+.set .tb{display:flex;gap:16px;justify-content:flex-end;color:var(--acc);font-size:12px;font-weight:600;margin-top:7px}
+.set .tb .d{color:var(--dim)}
+.set .snote{font-size:11px;color:var(--dim);line-height:1.45}
+.set .sub2{font-size:12px;font-weight:600;margin:10px 0 2px}
+kbd{background:var(--surface2);border:1px solid var(--line);border-radius:5px;padding:1px 6px;font-size:11px;color:var(--acc)}
+</style>
+</head>
+<body>
+<h1>Glucarb 1.3 &mdash; proposed changes</h1>
+<div class="sub">Dashed green outline = what changes. Nothing is implemented yet.</div>
+
+<div class="rail">
+
+<!-- ============ fixes ============ -->
+<div class="screen">
+  <div class="cap"><b>A</b> &middot; Settings &mdash; Save timeout on the right</div>
+  <div class="phone">
+    <div class="status"><span>9:41</span><span>&#9650; 87%</span></div>
+    <div class="top"><span class="x">&lsaquo;</span> Settings</div>
+    <div class="set">
+      <div class="sec" style="margin-top:2px">AI carb estimation</div>
+      <div class="card"><div>Assistant app<div class="sm">ChatGPT</div></div><span class="act">Change</span></div>
+      <div class="fieldx"><span>Prompt sent with the photo</span>Estimate the total grams of carbohydrates in this meal&hellip;</div>
+      <div class="tb"><span class="d">Reset to default</span><span>Save prompt</span></div>
+      <div class="sec">Meals</div>
+      <div class="fieldx"><span>Close the meal after this many idle minutes</span><b style="color:var(--txt)">90</b></div>
+      <div class="tb"><span class="new" style="padding:2px 6px">Save timeout</span></div>
+      <div class="sec">Backup</div>
+      <div class="snote">Automatic: Android backs up your catalog, photos and history to your Google account when device backup is on.</div>
+      <div class="sub2">Manual backup</div>
+      <div class="snote">Save everything to a file you keep, or restore from one.</div>
+      <div class="tb"><span>Restore from file</span><span>Save to file</span></div>
+      <div class="sec">Help</div>
+      <div class="card"><div>Show the tour again</div><span class="act">&rsaquo;</span></div>
+    </div>
+  </div>
+</div>
+
+<div class="screen">
+  <div class="cap"><b>B</b> &middot; Back to the app &mdash; keyboard stays closed</div>
+  <div class="phone">
+    <div class="status"><span>9:41</span><span>&#9650; 87%</span></div>
+    <div class="hero">
+      <div class="top">
+        <div class="lbl">Current meal</div>
+        <div class="ic2">&#8635;</div><div class="ic2">&#9881;</div>
+      </div>
+      <div class="band">
+        <div class="tot"><div class="big">0</div><div class="un">g carbs</div></div>
+      </div>
+    </div>
+    <div class="search new">&#128269; Search&hellip;
+      <div class="toggle"><div class="on">&#9638;</div><div>&#9776;</div></div>
+    </div>
+    <div class="scroll">
+      <div class="grid">
+        <div class="tile"><div class="em">&#127837;</div><div class="nm">Pasta</div></div>
+        <div class="tile"><div class="em">&#127838;</div><div class="nm">Bread</div></div>
+        <div class="tile"><div class="em">&#127834;</div><div class="nm">Rice</div></div>
+        <div class="tile"><div class="em">&#129364;</div><div class="nm">Potato</div></div>
+        <div class="tile"><div class="em">&#127822;</div><div class="nm">Apple</div></div>
+        <div class="tile letter"><div class="em">Y</div><div class="nm">Yogurt</div></div>
+        <div class="tile"><div class="em">&#129371;</div><div class="nm">Milk</div></div>
+        <div class="tile"><div class="em">&#127820;</div><div class="nm">Banana</div></div>
+        <div class="tile"><div class="em">&#129472;</div><div class="nm">Cheese</div></div>
+      </div>
+      <div style="font-size:10px;color:var(--dim);margin-top:12px;line-height:1.5">Leaving the app drops the search focus. Coming back shows the tiles, no keyboard. Typed text is kept; tap the field to type again.</div>
+    </div>
+  </div>
+</div>
+
+<div class="screen">
+  <div class="cap"><b>C</b> &middot; Create from search &mdash; spaces kept</div>
+  <div class="phone">
+    <div class="status"><span>9:41</span><span>&#9650; 87%</span></div>
+    <div class="top"><span class="x">&#10005;</span> New item <span class="save">Save</span></div>
+    <div class="scroll">
+      <div class="field new" style="padding:2px"><label>Name</label><div class="input">brown rice salad</div></div>
+      <div style="font-size:11px;color:var(--dim);margin:-4px 0 12px;line-height:1.5">Was <s>brown+rice+salad</s>.</div>
+      <div class="idrow">
+        <div class="avatar">&#127834;</div>
+        <div style="flex:1;min-width:0">
+          <div class="sugg"><div class="sc on">&#127834;</div><div class="sc">&#129367;</div><div class="sc">&#127835;</div></div>
+          <div class="idbtns" style="flex-wrap:wrap"><span>Icons</span><span>Camera</span><span>Gallery</span><span>Web</span><span>Clear</span></div>
+        </div>
+      </div>
+      <div class="field" style="margin-top:12px"><label>Measurement unit</label>
+        <div class="seg" style="width:100%;margin-bottom:0"><div class="on">Grams (g)</div><div>Millilitres (ml)</div></div>
+      </div>
+      <div style="height:12px"></div>
+      <div class="field"><label>Carbs per 100 g</label><div class="input" style="color:var(--dim)">&nbsp;</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ past meal ============ -->
+<div class="screen">
+  <div class="cap"><b>D</b> &middot; History &mdash; + Past meal</div>
+  <div class="phone">
+    <div class="status"><span>9:41</span><span>&#9650; 87%</span></div>
+    <div class="top"><span class="x">&lsaquo;</span> History <span class="save">&#11123; Export</span></div>
+    <div class="scroll">
+      <div class="daygrp">
+        <div class="dayh"><div class="d">Today</div><div class="t">107 g &middot; 3 meals</div></div>
+        <div class="mrow"><div class="tm">12:31<i>open</i></div><div class="tot">~47<span> g</span></div><div class="chev">&rsaquo;</div></div>
+        <div class="mrow"><div class="tm">10:15</div><div class="tot">18<span> g</span></div><div class="chev">&rsaquo;</div></div>
+        <div class="mrow"><div class="tm">07:40</div><div class="tot">54<span> g</span></div><div class="chev">&rsaquo;</div></div>
+      </div>
+      <div class="daygrp">
+        <div class="dayh"><div class="d">Yesterday</div><div class="t">144 g &middot; 3 meals</div></div>
+        <div class="mrow"><div class="tm">16:30</div><div class="tot">22<span> g</span></div><div class="chev">&rsaquo;</div></div>
+        <div class="mrow"><div class="tm">12:20</div><div class="tot">63<span> g</span></div><div class="chev">&rsaquo;</div></div>
+        <div class="mrow"><div class="tm">08:05</div><div class="tot">59<span> g</span></div><div class="chev">&rsaquo;</div></div>
+      </div>
+    </div>
+    <div class="new" style="position:absolute;right:16px;bottom:18px;background:var(--acc);color:#0c2417;font-weight:700;font-size:13px;border-radius:16px;padding:16px 18px;box-shadow:0 6px 18px rgba(91,208,138,.35)">&#65291; Past meal</div>
+  </div>
+</div>
+
+<div class="screen">
+  <div class="cap"><b>D1</b> &middot; When was it? &mdash; date &amp; time first</div>
+  <div class="phone">
+    <div class="status"><span>9:41</span><span>&#9650; 87%</span></div>
+    <div class="top"><span class="x">&lsaquo;</span> History <span class="save">&#11123; Export</span></div>
+    <div class="scroll">
+      <div class="daygrp">
+        <div class="dayh"><div class="d">Today</div><div class="t">107 g &middot; 3 meals</div></div>
+        <div class="mrow"><div class="tm">12:31<i>open</i></div><div class="tot">~47<span> g</span></div><div class="chev">&rsaquo;</div></div>
+        <div class="mrow"><div class="tm">10:15</div><div class="tot">18<span> g</span></div><div class="chev">&rsaquo;</div></div>
+      </div>
+    </div>
+    <div class="scrim"></div>
+    <div class="dlg new">
+      <div class="tt">Past meal &mdash; when did it start?</div>
+      <div class="fld">Fri 16 Oct 2026 <span>Date &rsaquo;</span></div>
+      <div class="tpick"><div class="on">19</div><div style="background:none;padding:0">:</div><div>50</div></div>
+      <div style="font-size:11px;color:var(--dim);text-align:center;margin-bottom:6px">Starts at now &middot; changed here to yesterday 19:50</div>
+      <div class="acts"><span class="c">Cancel</span><span>Next</span></div>
+    </div>
+  </div>
+</div>
+
+<div class="screen">
+  <div class="cap"><b>D2</b> &middot; Pick the first item</div>
+  <div class="phone">
+    <div class="status"><span>9:41</span><span>&#9650; 87%</span></div>
+    <div class="top new" style="margin:4px 8px 0;border-radius:10px"><span class="x">&#10005;</span> <span>New past meal<div style="font-size:11px;color:var(--dim);font-weight:400">Yesterday &middot; 19:50</div></span></div>
+    <div class="search">&#128269; Search&hellip;</div>
+    <div class="scroll">
+      <div class="lrow"><div class="lthumb">&#127837;</div><div><div class="lname">Pasta, cooked</div><div class="lmeta">32 g / 100 g</div></div><div class="ladd">&#65291;</div></div>
+      <div class="lrow"><div class="lthumb">&#127838;</div><div><div class="lname">Wholemeal bread</div><div class="lmeta">6.2 g / slice</div></div><div class="ladd">&#65291;</div></div>
+      <div class="lrow"><div class="lthumb">&#127846;</div><div><div class="lname">Ice cream</div><div class="lmeta">3.6 g / scoop</div></div><div class="ladd">&#65291;</div></div>
+      <div class="lrow"><div class="lthumb">&#129371;</div><div><div class="lname">Semi-skimmed milk</div><div class="lmeta">5 g / 100 ml</div></div><div class="ladd">&#65291;</div></div>
+      <div class="lrow"><div class="lthumb">&#127822;</div><div><div class="lname">Apple</div><div class="lmeta">17 g / apple</div></div><div class="ladd">&#65291;</div></div>
+      <div style="font-size:10px;color:var(--dim);margin-top:12px;line-height:1.5">Nothing is saved yet. The meal is created by the first item, so backing out leaves no empty meal behind.</div>
+    </div>
+  </div>
+</div>
+
+<div class="screen">
+  <div class="cap"><b>D3</b> &middot; Then you&rsquo;re in the meal &mdash; add the rest</div>
+  <div class="phone">
+    <div class="status"><span>9:41</span><span>&#9650; 87%</span></div>
+    <div class="top"><span class="x">&lsaquo;</span> Yesterday</div>
+    <div class="mhead"><div class="tm"><span>Started at <b>19:50</b></span></div><div class="big">58<span>g carbs</span></div></div>
+    <div class="scroll">
+      <div class="erow new" style="padding:10px 6px"><div class="lthumb">&#127837;</div><div><div class="nm">Pasta, cooked</div><div class="q">180 g</div></div><div class="c">58</div></div>
+      <div class="addbtn">+ Add item</div>
+    </div>
+    <div class="snack">Past meal added <b>Undo</b></div>
+  </div>
+</div>
+
+<!-- ============ French ============ -->
+<div class="screen">
+  <div class="cap"><b>E</b> &middot; Fran&ccedil;ais &mdash; follows the phone</div>
+  <div class="phone">
+    <div class="status"><span>9:41</span><span>&#9650; 87%</span></div>
+    <div class="hero new" style="outline-offset:-3px">
+      <div class="top">
+        <div class="lbl">Repas en cours</div>
+        <div class="mt"><span class="tv">12:31</span><span class="now">Maintenant</span></div>
+        <div class="ic2">&#8635;</div><div class="ic2">&#9881;</div>
+      </div>
+      <div class="band">
+        <div class="tot"><div class="big">47</div><div class="un">g de glucides</div></div>
+        <div class="mealgrid">
+          <div class="chipm"><span>&#127838; Pain</span><b>28</b></div>
+          <div class="chipm"><span>&#129371; Lait</span><b>10</b></div>
+          <div class="chipm"><span>&#127822; Pomme</span><b>9</b></div>
+        </div>
+      </div>
+    </div>
+    <div class="search new">&#128269; Rechercher&hellip;
+      <div class="toggle"><div class="on">&#9638;</div><div>&#9776;</div></div>
+    </div>
+    <div class="scroll">
+      <div class="grid">
+        <div class="tile"><div class="em">&#127837;</div><div class="nm">P&acirc;tes</div></div>
+        <div class="tile"><div class="em">&#127838;</div><div class="nm">Pain</div></div>
+        <div class="tile"><div class="em">&#127834;</div><div class="nm">Riz</div></div>
+        <div class="tile"><div class="em">&#129364;</div><div class="nm">Pomme de terre</div></div>
+        <div class="tile"><div class="em">&#127822;</div><div class="nm">Pomme</div></div>
+        <div class="tile letter"><div class="em">Y</div><div class="nm">Yaourt</div></div>
+      </div>
+      <div style="font-size:10px;color:var(--dim);margin-top:12px;line-height:1.5">App text is translated. Your catalog names are yours and are never translated.</div>
+    </div>
+  </div>
+</div>
+
+<div class="screen">
+  <div class="cap"><b>E1</b> &middot; Quantit&eacute; &mdash; virgule d&eacute;cimale</div>
+  <div class="phone">
+    <div class="status"><span>9:41</span><span>&#9650; 87%</span></div>
+    <div class="scroll"></div>
+    <div class="scrim"></div>
+    <div class="sheet">
+      <div class="grab"></div>
+      <div class="sh-head">
+        <div class="th">&#127838;</div>
+        <div><div class="t">Pain complet</div><div class="s new" style="padding:0 3px">6,2 g de glucides / tranche</div></div>
+      </div>
+      <div class="seg" style="width:200px"><div class="on">Tranches</div><div>Grammes</div></div>
+      <div class="amount">
+        <div class="arow"><div class="apx">~</div><div class="v new" style="padding:0 4px">0,25<span class="u">tranche</span></div></div>
+        <div class="c">1,6 g de glucides</div>
+      </div>
+      <div class="chips"><div class="chip">1</div><div class="chip">2</div></div>
+      <div class="pad">
+        <div class="key">1</div><div class="key">2</div><div class="key">3</div>
+        <div class="key">4</div><div class="key">5</div><div class="key">6</div>
+        <div class="key">7</div><div class="key">8</div><div class="key">9</div>
+        <div class="key f new" style="font-size:28px;font-weight:800;line-height:.6;outline-offset:-2px">,</div><div class="key">0</div><div class="key f">&#9003;</div>
+      </div>
+      <div class="cta"><div class="btn">Ajouter au repas</div></div>
+    </div>
+  </div>
+</div>
+
+<div class="screen">
+  <div class="cap"><b>E2</b> &middot; R&eacute;glages &mdash; Langue</div>
+  <div class="phone">
+    <div class="status"><span>9:41</span><span>&#9650; 87%</span></div>
+    <div class="top"><span class="x">&lsaquo;</span> R&eacute;glages</div>
+    <div class="set">
+      <div class="sec" style="margin-top:2px">Estimation par IA</div>
+      <div class="card"><div>Application d&rsquo;IA<div class="sm">ChatGPT</div></div><span class="act">Changer</span></div>
+      <div class="fieldx"><span>Consigne envoy&eacute;e avec la photo</span>Estime le total de glucides en grammes de ce repas&hellip;</div>
+      <div class="tb"><span class="d">Par d&eacute;faut</span><span>Enregistrer</span></div>
+      <div class="sec">Repas</div>
+      <div class="fieldx"><span>Cl&ocirc;turer le repas apr&egrave;s ce nombre de minutes d&rsquo;inactivit&eacute;</span><b style="color:var(--txt)">90</b></div>
+      <div class="tb"><span>Enregistrer</span></div>
+      <div class="sec new" style="padding:0 4px">Langue</div>
+      <div class="card new"><div>Langue de l&rsquo;application<div class="sm">Fran&ccedil;ais (langue du t&eacute;l&eacute;phone)</div></div><span class="act">&rsaquo;</span></div>
+      <div class="snote" style="margin-top:6px">Ouvre le r&eacute;glage Android &laquo;&nbsp;Langue de l&rsquo;application&nbsp;&raquo;.</div>
+      <div class="sec">Aide</div>
+      <div class="card"><div>Revoir la visite guid&eacute;e</div><span class="act">&rsaquo;</span></div>
+    </div>
+  </div>
+</div>
+
+</div>
+
+<div class="note">
+<b>A &middot; Save timeout</b> &mdash; right-aligned like Save prompt and Save to file.<br>
+<b>B &middot; Keyboard</b> &mdash; Home clears focus when the app goes to the background, so returning never re-opens the keyboard over the tiles. The typed query is kept.<br>
+<b>C &middot; &ldquo;+&rdquo; in names</b> &mdash; the name was URL-encoded with the form encoder (space &rarr; &ldquo;+&rdquo;) and navigation only decodes %20. Switching to proper URI encoding fixes it; &ldquo;&amp;&rdquo;, &ldquo;?&rdquo;, &ldquo;/&rdquo; and &ldquo;%&rdquo; also survive.<br>
+<b>D &middot; Past meal</b> &mdash; History gets a <kbd>+ Past meal</kbd> button &rarr; date &amp; time (starts at today, right now; you change the date/time; future refused) &rarr; the same picker &rarr; the usual quantity sheet &rarr; you land in that meal&rsquo;s detail to add more. The meal is created closed, with your time as its start. If it falls inside the meal currently open, it is still a separate meal.<br>
+<b>E &middot; Languages</b> &mdash; all UI text moves to <code>strings.xml</code>, with a French translation in <code>values-fr</code>. The app follows the phone language. On Android 13+ the user can also pick one for Glucarb only, from the Settings row (it opens Android&rsquo;s per-app language page). French gets a decimal comma on the keypad and in figures. The default AI prompt is in French too, unless you have edited yours. CSV export keeps English headers and &ldquo;.&rdquo; decimals, so analysis scripts don&rsquo;t break. The Play Store listing gets a French version too.
+</div>
+
+</body>
+</html>

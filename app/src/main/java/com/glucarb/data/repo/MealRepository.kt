@@ -23,6 +23,11 @@ class MealRepository(
     private val photos: PhotoStore,
 ) {
 
+    companion object {
+        /** Fallback name of an AI placeholder; the UI normally passes a translated one. */
+        const val DEFAULT_ESTIMATE_LABEL = "Plate estimate"
+    }
+
     fun observeCurrentMeal(): Flow<MealWithEntries?> = dao.observeOpenMeal()
 
     fun observeRecentMeals(limit: Int = 200): Flow<List<MealWithEntries>> =
@@ -153,17 +158,21 @@ class MealRepository(
         return open.id to open.startedAt
     }
 
-    /** Creates the placeholder row shown while the AI app is being consulted. */
+    /**
+     * Creates the placeholder row shown while the AI app is being consulted. [label] is
+     * stored with the entry, so the UI passes it already in the user's language.
+     */
     suspend fun addPendingAiEntry(
         photoPath: String?,
         now: Long = System.currentTimeMillis(),
+        label: String = DEFAULT_ESTIMATE_LABEL,
     ): Long {
         val meal = requireOpenMeal(now)
         val id = dao.insertEntry(
             MealEntry(
                 mealId = meal.id,
                 foodItemId = null,
-                label = "Plate estimate",
+                label = label,
                 photoPath = photoPath,
                 quantity = 1.0,
                 unit = MeasurementUnit.G,

@@ -1,6 +1,8 @@
 package com.glucarb.domain
 
 import com.glucarb.data.entity.FoodItem
+import java.text.DecimalFormatSymbols
+import java.util.Locale
 import kotlin.math.abs
 import kotlin.math.roundToInt
 
@@ -85,4 +87,21 @@ object CarbMath {
     /** "~" rather than "\u2248": it reads at a glance at every size the app prints totals. */
     fun formatCarbs(value: Double, approximate: Boolean): String =
         if (approximate) "~" + formatCarbs(value) else formatCarbs(value)
+
+    /**
+     * [format] for display: the same rounding, written with [locale]'s decimal separator
+     * ("6,2" in French). [format] itself stays "."-based because the CSV export and the
+     * input parsing rely on it.
+     */
+    fun formatLocal(value: Double, decimals: Int = 1, locale: Locale = Locale.getDefault()): String =
+        localizeDecimal(format(value, decimals), locale)
+
+    /** Swaps the "." of a machine-formatted number for [locale]'s decimal separator. */
+    fun localizeDecimal(text: String, locale: Locale = Locale.getDefault()): String {
+        val separator = decimalSeparator(locale)
+        return if (separator == '.') text else text.replace('.', separator)
+    }
+
+    fun decimalSeparator(locale: Locale = Locale.getDefault()): Char =
+        DecimalFormatSymbols.getInstance(locale).decimalSeparator
 }

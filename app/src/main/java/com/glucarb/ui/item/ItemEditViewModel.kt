@@ -4,6 +4,7 @@ import android.net.Uri
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.glucarb.R
 import com.glucarb.data.MeasurementUnit
 import com.glucarb.data.entity.FoodItem
 import com.glucarb.data.repo.FoodRepository
@@ -12,6 +13,7 @@ import com.glucarb.data.repo.PhotoStore
 import com.glucarb.domain.CarbMath
 import com.glucarb.domain.EmojiSuggester
 import com.glucarb.domain.FoodIcon
+import com.glucarb.ui.common.UiText
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -49,16 +51,28 @@ data class ItemEditState(
             (!portionEnabled || (portionValue ?: 0.0) > 0.0)
 
     /** Live preview of one portion, so the user can sanity-check before saving. */
-    val portionPreview: String?
+    val portionPreview: PortionPreview?
         get() {
             if (!portionEnabled) return null
             val size = portionValue ?: return null
             val carbs = carbsValue ?: return null
             if (size <= 0.0) return null
-            return "1 ${portionLabel.ifBlank { "portion" }} = ${CarbMath.format(size)}${unit.label}" +
-                " = ${CarbMath.format(CarbMath.carbsFor(size, carbs))} g carbs"
+            return PortionPreview(
+                label = portionLabel.ifBlank { "portion" },
+                size = size,
+                unit = unit,
+                carbs = CarbMath.carbsFor(size, carbs),
+            )
         }
 }
+
+/** The figures behind "1 slice = 30g = 15 g carbs"; the UI words them. */
+data class PortionPreview(
+    val label: String,
+    val size: Double,
+    val unit: MeasurementUnit,
+    val carbs: Double,
+)
 
 @HiltViewModel
 class ItemEditViewModel @Inject constructor(
@@ -71,7 +85,7 @@ class ItemEditViewModel @Inject constructor(
     private val _state = MutableStateFlow(ItemEditState())
     val state: StateFlow<ItemEditState> = _state
 
-    private val _errors = kotlinx.coroutines.channels.Channel<String>(kotlinx.coroutines.channels.Channel.BUFFERED)
+    private val _errors = kotlinx.coroutines.channels.Channel<UiText>(kotlinx.coroutines.channels.Channel.BUFFERED)
     val errors = _errors.receiveAsFlow()
 
     private val itemId: Long = savedStateHandle.get<String>("itemId")?.toLongOrNull() ?: 0L
@@ -132,7 +146,7 @@ class ItemEditViewModel @Inject constructor(
         _state.value = _state.value.copy(approximateByDefault = enabled)
     }
 
-    fun reportError(message: String) {
+    fun reportError(message: UiText) {
         viewModelScope.launch { _errors.send(message) }
     }
 
@@ -147,7 +161,7 @@ class ItemEditViewModel @Inject constructor(
         viewModelScope.launch {
             loadJob.join()
             when (val result = photos.importCatalogPhoto(uri)) {
-                is PhotoImport.Failed -> _errors.send("Photo failed \u2014 ${result.reason}")
+                is PhotoImport.Failed -> _errors.send(UiText.Res(R.string.error_photo_failed, result.reason))
                 is PhotoImport.Stored -> applyPhoto(result.path)
             }
         }
@@ -170,11 +184,11 @@ class ItemEditViewModel @Inject constructor(
         viewModelScope.launch {
             loadJob.join()
             if (!photos.hasContent(scratch)) {
-                _errors.send("The camera saved nothing to ${scratch.name}")
+                _errors.send(UiText.Res(R.string.error_camera_saved_nothing, scratch.name))
                 return@launch
             }
             when (val result = photos.importCatalogPhoto(scratch)) {
-                is PhotoImport.Failed -> _errors.send("Photo failed \u2014 ${result.reason}")
+                is PhotoImport.Failed -> _errors.send(UiText.Res(R.string.error_photo_failed, result.reason))
                 is PhotoImport.Stored -> {
                     photos.delete(scratch.absolutePath)
                     applyPhoto(result.path)

@@ -3,9 +3,11 @@ package com.glucarb.ui.settings
 import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.glucarb.R
 import com.glucarb.data.repo.AppSettings
 import com.glucarb.data.repo.BackupManager
 import com.glucarb.data.repo.SettingsRepository
+import com.glucarb.ui.common.UiText
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
@@ -20,7 +22,7 @@ import javax.inject.Inject
 
 /** One-shot outcomes of a backup operation, surfaced as a snackbar. */
 sealed interface BackupEvent {
-    data class Message(val text: String) : BackupEvent
+    data class Message(val text: UiText) : BackupEvent
 
     /** The database file was swapped underneath Room; the process has to restart. */
     data object RestartRequired : BackupEvent
@@ -66,8 +68,8 @@ class SettingsViewModel @Inject constructor(
             _events.send(
                 BackupEvent.Message(
                     result.fold(
-                        onSuccess = { count -> "Backup saved ($count photos)" },
-                        onFailure = { "Export failed: ${it.message ?: "unknown error"}" },
+                        onSuccess = { count -> UiText.Plural(R.plurals.backup_saved, count) },
+                        onFailure = { UiText.Res(R.string.error_export_failed, it.reason()) },
                     ),
                 ),
             )
@@ -84,10 +86,12 @@ class SettingsViewModel @Inject constructor(
                 onSuccess = { _events.send(BackupEvent.RestartRequired) },
                 onFailure = {
                     _events.send(
-                        BackupEvent.Message("Restore failed: ${it.message ?: "unknown error"}"),
+                        BackupEvent.Message(UiText.Res(R.string.error_restore_failed, it.reason())),
                     )
                 },
             )
         }
     }
 }
+
+private fun Throwable.reason(): Any = message ?: UiText.Res(R.string.error_unknown)

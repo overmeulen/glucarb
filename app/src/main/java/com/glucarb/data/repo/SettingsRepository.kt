@@ -1,6 +1,7 @@
 package com.glucarb.data.repo
 
 import android.content.Context
+import com.glucarb.R
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
@@ -24,7 +25,12 @@ data class AppSettings(
      * first use of the camera button cannot tell whether to prompt without this.
      */
     val aiTargetChosen: Boolean = false,
-    val aiPrompt: String = DEFAULT_AI_PROMPT,
+    /**
+     * The user's own prompt, or null while they keep the default. The default is a string
+     * resource (R.string.default_ai_prompt) so it follows the app language; resolve it with
+     * [promptOr].
+     */
+    val aiPrompt: String? = null,
     /** The first-launch coach-mark tour has been finished or skipped. */
     val tourDone: Boolean = false,
     /** Set by "Show the tour again", so the tour shows even with a full catalog. */
@@ -34,13 +40,31 @@ data class AppSettings(
 ) {
     companion object {
         const val DEFAULT_IDLE_MINUTES = 30
+        /**
+         * The English default that versions before localisation stored verbatim. A stored
+         * copy of it is not a customisation, so it is treated as "default" and follows the
+         * language like a prompt that was never touched.
+         */
         const val DEFAULT_AI_PROMPT =
             "Analyse this photo of food. Reply with ONLY a single number: " +
                 "the total grams of carbohydrates in the food shown. No text, no units."
+
+        /**
+         * [stored] if it is a real customisation, otherwise null. Blank text, the legacy
+         * English default and any of the current [defaults] (the localised default) all
+         * count as "not customised".
+         */
+        fun customPromptOrNull(stored: String?, vararg defaults: String): String? {
+            val text = stored?.trim().orEmpty()
+            if (text.isEmpty()) return null
+            if (text == DEFAULT_AI_PROMPT || defaults.any { it.trim() == text }) return null
+            return stored
+        }
     }
+
+    /** The prompt to send: the user's own, or [localizedDefault]. */
+    fun promptOr(localizedDefault: String): String = aiPrompt ?: localizedDefault
 }
-
-
 
 class SettingsRepository(private val context: Context) {
 
@@ -63,7 +87,7 @@ class SettingsRepository(private val context: Context) {
             aiTargetPackage = p[Keys.AI_PKG],
             aiTargetLabel = p[Keys.AI_LABEL],
             aiTargetChosen = (p[Keys.AI_CHOSEN] ?: 0) == 1,
-            aiPrompt = p[Keys.AI_PROMPT] ?: AppSettings.DEFAULT_AI_PROMPT,
+            aiPrompt = AppSettings.customPromptOrNull(p[Keys.AI_PROMPT], localizedDefaultPrompt()),
             tourDone = (p[Keys.TOUR_DONE] ?: 0) == 1,
             tourRequested = (p[Keys.TOUR_REQUESTED] ?: 0) == 1,
             seenTips = p[Keys.SEEN_TIPS].orEmpty(),
@@ -92,11 +116,15 @@ class SettingsRepository(private val context: Context) {
         }
     }
 
+    /** Stores a custom prompt; blank or default text clears it back to the default. */
     suspend fun setAiPrompt(prompt: String) {
+        val custom = AppSettings.customPromptOrNull(prompt, localizedDefaultPrompt())
         context.dataStore.edit {
-            it[Keys.AI_PROMPT] = prompt.ifBlank { AppSettings.DEFAULT_AI_PROMPT }
+            if (custom == null) it.remove(Keys.AI_PROMPT) else it[Keys.AI_PROMPT] = custom
         }
     }
+
+    private fun localizedDefaultPrompt(): String = context.getString(R.string.default_ai_prompt)
 
     suspend fun setTourDone() {
         context.dataStore.edit {

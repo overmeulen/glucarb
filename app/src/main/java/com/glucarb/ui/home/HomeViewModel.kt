@@ -2,6 +2,7 @@ package com.glucarb.ui.home
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.glucarb.R
 import com.glucarb.data.dao.MealWithEntries
 import com.glucarb.data.entity.FoodItem
 import com.glucarb.data.entity.MealEntry
@@ -13,6 +14,7 @@ import com.glucarb.data.repo.SettingsRepository
 import com.glucarb.domain.CarbMath
 import com.glucarb.domain.CarbTextParser
 import com.glucarb.domain.ItemRanker
+import com.glucarb.ui.common.UiText
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay
@@ -66,11 +68,12 @@ data class HomeUiState(
 sealed interface HomeEvent {
     data class EntryAdded(val label: String, val carbs: Double, val entryId: Long) : HomeEvent
     data class EntryDeleted(val entry: MealEntry) : HomeEvent
-    data class Message(val text: String) : HomeEvent
+    data class Message(val text: UiText) : HomeEvent
 
     /** The meal start was moved; [previous] lets the snackbar undo it. */
     data class MealTimeSet(val mealId: Long, val previous: Long, val newStart: Long) : HomeEvent
-    data class ShareForAi(val entryId: Long, val photoPath: String, val prompt: String) : HomeEvent
+    /** [prompt] is null while the user keeps the default, which the UI reads in its language. */
+    data class ShareForAi(val entryId: Long, val photoPath: String, val prompt: String?) : HomeEvent
 }
 
 @HiltViewModel
@@ -282,8 +285,8 @@ class HomeViewModel @Inject constructor(
     /**
      * Registers a plate photo picked from the gallery.
      */
-    fun startAiEstimate(sourceUri: android.net.Uri) {
-        viewModelScope.launch { finishAiEstimate(photos.importAdHocPhoto(sourceUri)) }
+    fun startAiEstimate(sourceUri: android.net.Uri, label: String = MealRepository.DEFAULT_ESTIMATE_LABEL) {
+        viewModelScope.launch { finishAiEstimate(photos.importAdHocPhoto(sourceUri), label) }
     }
 
     /**
@@ -294,27 +297,27 @@ class HomeViewModel @Inject constructor(
      * turned back into a file. Reading our own capture directly also removes FileProvider
      * from the read path entirely.
      */
-    fun startAiEstimate(capture: java.io.File) {
+    fun startAiEstimate(capture: java.io.File, label: String = MealRepository.DEFAULT_ESTIMATE_LABEL) {
         viewModelScope.launch {
             if (!photos.hasContent(capture)) {
-                _events.send(HomeEvent.Message("The camera saved nothing to ${capture.name}"))
+                _events.send(HomeEvent.Message(UiText.Res(R.string.error_camera_saved_nothing, capture.name)))
                 return@launch
             }
             val result = photos.importAdHocPhoto(capture)
             if (result is com.glucarb.data.repo.PhotoImport.Stored) {
                 photos.delete(capture.absolutePath)
             }
-            finishAiEstimate(result)
+            finishAiEstimate(result, label)
         }
     }
 
-    private suspend fun finishAiEstimate(result: com.glucarb.data.repo.PhotoImport) {
+    private suspend fun finishAiEstimate(result: com.glucarb.data.repo.PhotoImport, label: String) {
         if (result is com.glucarb.data.repo.PhotoImport.Failed) {
-            _events.send(HomeEvent.Message("Photo failed \u2014 ${result.reason}"))
+            _events.send(HomeEvent.Message(UiText.Res(R.string.error_photo_failed, result.reason)))
             return
         }
         val stored = result.pathOrNull ?: return
-        val entryId = mealRepo.addPendingAiEntry(stored)
+        val entryId = mealRepo.addPendingAiEntry(stored, label = label)
         _events.send(HomeEvent.ShareForAi(entryId, stored, settings.value.aiPrompt))
     }
 

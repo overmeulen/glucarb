@@ -27,8 +27,8 @@ android {
         applicationId = "io.github.overmeulen.glucarb"
         minSdk = 26
         targetSdk = 36
-        versionCode = 4
-        versionName = "1.2"
+        versionCode = 5
+        versionName = "1.3"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
@@ -68,6 +68,13 @@ android {
 
     buildFeatures {
         compose = true
+    }
+
+    androidResources {
+        // Only the languages the app itself is translated into; otherwise library strings in
+        // other languages would leave the UI half-translated. Keep in sync with
+        // res/xml/locales_config.xml, which is written by hand.
+        localeFilters += listOf("en", "fr")
     }
 
     packaging {

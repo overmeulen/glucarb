@@ -33,6 +33,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.res.stringResource
+import com.glucarb.R
 import com.glucarb.domain.CarbMath
 import com.glucarb.ui.common.TipCard
 import com.glucarb.ui.common.ItemAvatar
@@ -82,7 +84,9 @@ fun QuantitySheet(
             if (state.item.hasPortions) {
                 ModeToggle(
                     portionLabel = state.item.portionName.replaceFirstChar { it.uppercase() } + "s",
-                    unitLabel = if (state.item.unit.label == "g") "Grams" else "Millilitres",
+                    unitLabel = stringResource(
+                        if (state.item.unit.label == "g") R.string.unit_grams else R.string.unit_millilitres,
+                    ),
                     portionsSelected = state.asPortions,
                     onToggle = onToggleMode,
                 )
@@ -101,7 +105,7 @@ fun QuantitySheet(
                     }
                     Row(verticalAlignment = Alignment.Bottom) {
                     Text(
-                        state.input.ifEmpty { "0" },
+                        CarbMath.localizeDecimal(state.input.ifEmpty { "0" }),
                         fontSize = 40.sp,
                         fontWeight = FontWeight.Bold,
                     )
@@ -113,15 +117,16 @@ fun QuantitySheet(
                     )
                     }
                 }
+                val carbsDescription = stringResource(
+                    if (state.approximate) R.string.cd_carbs_approx else R.string.cd_carbs,
+                    CarbMath.formatCarbs(state.carbs),
+                )
                 Text(
-                    "${CarbMath.formatCarbs(state.carbs, state.approximate)} g carbs",
+                    stringResource(R.string.carbs_amount, CarbMath.formatCarbs(state.carbs, state.approximate)),
                     color = MaterialTheme.colorScheme.primary,
                     fontWeight = FontWeight.SemiBold,
                     style = MaterialTheme.typography.bodyMedium,
-                    modifier = Modifier.semantics {
-                        contentDescription = (if (state.approximate) "about " else "") +
-                            "${CarbMath.formatCarbs(state.carbs)} grams of carbs"
-                    },
+                    modifier = Modifier.semantics { contentDescription = carbsDescription },
                 )
             }
 
@@ -132,7 +137,7 @@ fun QuantitySheet(
                 state.chips.forEach { chip ->
                     val selected = CarbMath.format(chip, 2) == state.input
                     QuantityChip(
-                        text = "${CarbMath.format(chip, 2)} ${
+                        text = "${CarbMath.formatLocal(chip, 2)} ${
                             if (state.asPortions) "" else state.item.unit.label
                         }".trim(),
                         selected = selected,
@@ -151,7 +156,7 @@ fun QuantitySheet(
 
             if (showApproxTip && !state.item.approximateByDefault && state.editingEntryId == null) {
                 TipCard(
-                    text = "Not sure of the quantity? Tap ~ to log it as approximate.",
+                    text = stringResource(R.string.tip_approx),
                     onDismiss = onDismissApproxTip,
                     modifier = Modifier.padding(top = 10.dp),
                 )
@@ -173,7 +178,7 @@ fun QuantitySheet(
                             contentColor = MaterialTheme.colorScheme.onError,
                         ),
                     ) {
-                        Text("Delete", fontWeight = FontWeight.Bold)
+                        Text(stringResource(R.string.action_delete), fontWeight = FontWeight.Bold)
                     }
                 }
                 Button(
@@ -182,7 +187,7 @@ fun QuantitySheet(
                     modifier = Modifier.weight(1f),
                 ) {
                     Text(
-                        if (state.editingEntryId == null) "Add to meal" else "Save",
+                        stringResource(if (state.editingEntryId == null) R.string.add_to_meal else R.string.action_save),
                         fontWeight = FontWeight.Bold,
                     )
                 }
@@ -192,20 +197,22 @@ fun QuantitySheet(
 }
 
 /** Only the rate for the mode in use: the other one is a tap away and just adds noise. */
+@Composable
 private fun rateLabel(state: QuantitySheetState): String {
     val item = state.item
     val tilde = if (item.approximateByDefault) "~" else ""
     val perPortion = if (state.asPortions) CarbMath.carbsPerPortion(item) else null
     return if (perPortion != null) {
-        "$tilde${CarbMath.formatCarbs(perPortion)} g carbs / ${item.portionName}"
+        stringResource(R.string.rate_per_portion, tilde + CarbMath.formatCarbs(perPortion), item.portionName)
     } else {
-        "$tilde${CarbMath.format(item.carbsPer100)} g carbs / 100 ${item.unit.label}"
+        stringResource(R.string.rate_per_100, tilde + CarbMath.formatLocal(item.carbsPer100), item.unit.label)
     }
 }
 
 @Composable
 private fun ApproximateToggle(on: Boolean, onToggle: () -> Unit) {
     val accent = MaterialTheme.colorScheme.primary
+    val approximateDescription = stringResource(R.string.cd_approximate)
     Box(
         contentAlignment = Alignment.Center,
         modifier = Modifier
@@ -218,7 +225,7 @@ private fun ApproximateToggle(on: Boolean, onToggle: () -> Unit) {
                 role = Role.Switch,
                 onValueChange = { onToggle() },
             )
-            .semantics { contentDescription = "Approximate" },
+            .semantics { contentDescription = approximateDescription },
     ) {
         Text(
             "~",
@@ -302,10 +309,15 @@ fun QuantityChip(
 
 @Composable
 fun Keypad(keys: List<String>, onKey: (String) -> Unit) {
+    // The decimal key sends "." whatever the language, so the input keeps parsing; only
+    // its face shows the locale's separator.
+    val separator = CarbMath.decimalSeparator().toString()
+    val backspace = stringResource(R.string.cd_backspace)
     Column(verticalArrangement = Arrangement.spacedBy(7.dp)) {
         keys.chunked(3).forEach { row ->
             Row(horizontalArrangement = Arrangement.spacedBy(7.dp)) {
                 row.forEach { key ->
+                    val face = if (key == ".") separator else key
                     Box(
                         contentAlignment = Alignment.Center,
                         modifier = Modifier
@@ -314,10 +326,10 @@ fun Keypad(keys: List<String>, onKey: (String) -> Unit) {
                             .background(MaterialTheme.colorScheme.surfaceVariant)
                             .clickable { onKey(key) }
                             .padding(vertical = 13.dp)
-                            .semantics { contentDescription = if (key == "<") "Backspace" else key },
+                            .semantics { contentDescription = if (key == "<") backspace else face },
                     ) {
                         Text(
-                            if (key == "<") "\u232B" else key,
+                            if (key == "<") "\u232B" else face,
                             fontSize = if (key.length > 1 || key == "<") 15.sp else 19.sp,
                             fontWeight = FontWeight.Medium,
                         )

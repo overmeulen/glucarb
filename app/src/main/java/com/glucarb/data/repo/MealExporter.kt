@@ -2,6 +2,7 @@ package com.glucarb.data.repo
 
 import android.content.Context
 import android.net.Uri
+import com.glucarb.R
 import com.glucarb.domain.MealCsvExport
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -30,7 +31,7 @@ class MealExporter(
             runCatching {
                 val (csv, result) = render(from)
                 val stream = context.contentResolver.openOutputStream(target)
-                    ?: error("Cannot open the destination file")
+                    ?: error(context.getString(R.string.error_cannot_open_destination))
                 stream.use { it.write(csv.toByteArray(Charsets.UTF_8)) }
                 result
             }

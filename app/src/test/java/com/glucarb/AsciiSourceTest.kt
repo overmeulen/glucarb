@@ -30,6 +30,7 @@ class AsciiSourceTest {
         roots.forEach { root ->
             root.walkTopDown()
                 .filter { it.isFile && (it.extension == "kt" || it.extension == "xml") }
+                .filterNot(::isTranslation)
                 .forEach { file ->
                     file.readText().lineSequence().forEachIndexed { index, line ->
                         val bad = line.filter { it.code > 127 }
@@ -47,4 +48,12 @@ class AsciiSourceTest {
             offenders.isEmpty(),
         )
     }
+
+    /**
+     * Translated strings (res/values-fr/strings.xml...) are written in their own language,
+     * accents included, so a translator can read them. TranslationCompletenessTest guards
+     * them against the same cp1252 corruption instead. The default values/ stays ASCII.
+     */
+    private fun isTranslation(file: File): Boolean =
+        file.name == "strings.xml" && file.parentFile?.name?.startsWith("values-") == true
 }

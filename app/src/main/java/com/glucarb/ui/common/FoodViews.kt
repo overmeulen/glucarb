@@ -53,7 +53,7 @@ fun FoodItem.badgeText(): String {
         // used to derive this number, and repeating it costs a scarce line of tile space.
         "$prefix${CarbMath.formatCarbs(CarbMath.carbsPerPortion(this) ?: 0.0)} g/$portionName"
     } else {
-        "$prefix${CarbMath.format(carbsPer100)}/100${unit.label}"
+        "$prefix${CarbMath.formatLocal(carbsPer100)}/100${unit.label}"
     }
 }
 

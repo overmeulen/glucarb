@@ -1,5 +1,7 @@
 package com.glucarb.ui.settings
 
+import androidx.compose.ui.res.stringResource
+import com.glucarb.R
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.content.pm.ResolveInfo
@@ -48,7 +50,7 @@ fun AssistantPickerDialog(
     targets: List<ShareTarget>,
     onPick: (packageName: String?, label: String?) -> Unit,
     onDismiss: () -> Unit,
-    title: String = "Send photos to",
+    title: String = stringResource(R.string.send_photos_to),
     subtitle: String? = null,
 ) {
     AlertDialog(
@@ -75,13 +77,13 @@ fun AssistantPickerDialog(
                 }
                 if (targets.isEmpty()) {
                     Text(
-                        "No app on this device accepts shared images.",
+                        stringResource(R.string.no_app_accepts_images),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
                 Text(
-                    "Ask every time",
+                    stringResource(R.string.ask_every_time),
                     modifier = Modifier
                         .fillMaxWidth()
                         .clickable { onPick(null, null) }
@@ -89,7 +91,7 @@ fun AssistantPickerDialog(
                 )
             }
         },
-        confirmButton = { TextButton(onClick = onDismiss) { Text("Cancel") } },
+        confirmButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.action_cancel)) } },
     )
 }
 

@@ -30,9 +30,12 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.annotation.StringRes
+import com.glucarb.R
 
 private val CardColor = Color(0xFFEEF1F7)
 private val CardText = Color(0xFF12141A)
@@ -52,29 +55,17 @@ fun TipCard(text: String, onDismiss: () -> Unit, modifier: Modifier = Modifier) 
     ) {
         Text(text, color = CardText, fontSize = 13.sp, lineHeight = 18.sp)
         TextButton(onClick = onDismiss, modifier = Modifier.align(Alignment.End)) {
-            Text("Got it", color = CardAccent, fontWeight = FontWeight.Bold)
+            Text(stringResource(R.string.action_got_it), color = CardAccent, fontWeight = FontWeight.Bold)
         }
     }
 }
 
-data class TourStep(val title: String, val body: String)
+data class TourStep(@StringRes val title: Int, @StringRes val body: Int)
 
 val TOUR_STEPS = listOf(
-    TourStep(
-        "Build your catalog",
-        "Tap + to add the foods you eat often: carbs per 100 g or ml, and optionally a " +
-            "portion like a slice. 20 seconds each, typed once.",
-    ),
-    TourStep(
-        "Can't weigh it?",
-        "Snap the plate: Glucarb hands the photo to your AI assistant, then you type its " +
-            "estimate. Always logged as approximate.",
-    ),
-    TourStep(
-        "History & settings",
-        "History: every meal, editable afterwards, exportable for analysis.\n" +
-            "Settings: your AI app, backups, and this tour again.",
-    ),
+    TourStep(R.string.tour_catalog_title, R.string.tour_catalog_body),
+    TourStep(R.string.tour_photo_title, R.string.tour_photo_body),
+    TourStep(R.string.tour_history_title, R.string.tour_history_body),
 )
 
 /**
@@ -137,9 +128,9 @@ fun TourOverlay(
                 .background(CardColor)
                 .padding(18.dp),
         ) {
-            Text(content.title, color = CardText, fontSize = 18.sp, fontWeight = FontWeight.Bold)
+            Text(stringResource(content.title), color = CardText, fontSize = 18.sp, fontWeight = FontWeight.Bold)
             Text(
-                content.body,
+                stringResource(content.body),
                 color = CardSubtext,
                 fontSize = 14.sp,
                 lineHeight = 20.sp,
@@ -161,10 +152,10 @@ fun TourOverlay(
                     }
                 }
                 TextButton(onClick = onSkip) {
-                    Text("Skip", color = CardMuted, fontWeight = FontWeight.Bold)
+                    Text(stringResource(R.string.action_skip), color = CardMuted, fontWeight = FontWeight.Bold)
                 }
                 TextButton(onClick = onNext) {
-                    Text(if (last) "Got it" else "Next", color = CardAccent, fontWeight = FontWeight.Bold)
+                    Text(stringResource(if (last) R.string.action_got_it else R.string.action_next), color = CardAccent, fontWeight = FontWeight.Bold)
                 }
             }
         }

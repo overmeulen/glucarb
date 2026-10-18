@@ -18,7 +18,7 @@ object CarbTextParser {
 
     private val NUMBER = Regex(NUM)
     private val NUMBER_WITH_HINT = Regex(
-        """$NUM\s*(?:g\b|gram|grammes?|grams?)?[^\n\d]{0,24}?carb""",
+        """$NUM\s*(?:g\b|gram|grammes?|grams?)?[^\n\d]{0,24}?(?:carb|glucid)""",
         RegexOption.IGNORE_CASE,
     )
     private val NUMBER_WITH_GRAMS = Regex(

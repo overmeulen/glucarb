@@ -68,6 +68,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.glucarb.R
 import com.glucarb.data.entity.MealEntry
 import com.glucarb.domain.CarbMath
 import com.glucarb.ui.common.FoodRow
@@ -76,6 +77,8 @@ import com.glucarb.ui.common.MealTimeDialog
 import com.glucarb.ui.common.TOUR_STEPS
 import com.glucarb.ui.common.TipCard
 import com.glucarb.ui.common.TourOverlay
+import com.glucarb.ui.common.asString
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.layout.boundsInRoot
 import androidx.compose.ui.layout.onGloballyPositioned
@@ -89,7 +92,6 @@ import com.glucarb.ui.settings.rememberShareTargets
 private const val TIP_TILE = "tile"
 private const val TIP_APPROX = "approx"
 private const val TIP_MEAL = "meal"
-private const val TILE_TIP = "Tap a food to add it to your meal. Long-press to edit it."
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -106,6 +108,10 @@ fun HomeScreen(
     val adHoc by viewModel.adHocSheet.collectAsStateWithLifecycle()
     val snackbar = remember { SnackbarHostState() }
     val context = LocalContext.current
+    // Stored on the placeholder entry, so it is resolved here in the user's language.
+    val plateEstimateLabel = stringResource(R.string.plate_estimate_label)
+    val defaultPrompt = stringResource(R.string.default_ai_prompt)
+    val tileTip = stringResource(R.string.tip_tile)
 
     var captureUri by rememberSaveable { mutableStateOf<String?>(null) }
     var choosingAssistant by remember { mutableStateOf(false) }
@@ -126,14 +132,14 @@ fun HomeScreen(
     ) { ok ->
         val path = captureUri
         captureUri = null
-        if (ok && path != null) viewModel.startAiEstimate(java.io.File(path))
+        if (ok && path != null) viewModel.startAiEstimate(java.io.File(path), plateEstimateLabel)
     }
 
     // See ItemEditScreen: GetContent reaches the user's real gallery, the system photo
     // picker only shows MediaStore-indexed media.
     val galleryLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.GetContent()
-    ) { uri -> if (uri != null) viewModel.startAiEstimate(uri) }
+    ) { uri -> if (uri != null) viewModel.startAiEstimate(uri, plateEstimateLabel) }
 
     val launchCapture: () -> Unit = {
         val (file, uri) = viewModel.newCaptureTarget()
@@ -160,8 +166,10 @@ fun HomeScreen(
             when (event) {
                 is HomeEvent.EntryAdded -> {
                     val result = snackbar.showSnackbar(
-                        message = "Added ${event.label}, ${CarbMath.formatCarbs(event.carbs)} g",
-                        actionLabel = "Undo",
+                        message = context.getString(
+                            R.string.snackbar_entry_added, event.label, CarbMath.formatCarbs(event.carbs),
+                        ),
+                        actionLabel = context.getString(R.string.action_undo),
                         duration = SnackbarDuration.Short,
                     )
                     if (result == SnackbarResult.ActionPerformed) viewModel.undoAdd(event.entryId)
@@ -170,8 +178,8 @@ fun HomeScreen(
                 is HomeEvent.MealTimeSet -> {
                     val label = DateFormat.getTimeInstance(DateFormat.SHORT).format(Date(event.newStart))
                     val result = snackbar.showSnackbar(
-                        message = "Meal time set to $label",
-                        actionLabel = "Undo",
+                        message = context.getString(R.string.snackbar_meal_time_set, label),
+                        actionLabel = context.getString(R.string.action_undo),
                         duration = SnackbarDuration.Short,
                     )
                     if (result == SnackbarResult.ActionPerformed) {
@@ -181,30 +189,31 @@ fun HomeScreen(
 
                 is HomeEvent.EntryDeleted -> {
                     val result = snackbar.showSnackbar(
-                        message = "Removed ${event.entry.label}",
-                        actionLabel = "Undo",
+                        message = context.getString(R.string.snackbar_entry_removed, event.entry.label),
+                        actionLabel = context.getString(R.string.action_undo),
                         duration = SnackbarDuration.Short,
                     )
                     if (result == SnackbarResult.ActionPerformed) viewModel.undoDelete(event.entry)
                 }
 
                 is HomeEvent.Message ->
-                    snackbar.showSnackbar(event.text, duration = SnackbarDuration.Long)
+                    snackbar.showSnackbar(event.text.asString(context), duration = SnackbarDuration.Long)
 
                 is HomeEvent.ShareForAi -> {
                     // Most assistants drop EXTRA_TEXT when an image is attached, so the
                     // prompt also goes on the clipboard: one long-press paste in the other
                     // app, rather than typing it out every meal.
-                    copyToClipboard(context, event.prompt)
-                    viewModel.notePromptOnClipboard(event.prompt)
+                    val prompt = event.prompt ?: defaultPrompt
+                    copyToClipboard(context, prompt)
+                    viewModel.notePromptOnClipboard(prompt)
                     val sent = shareToAi(
                         context = context,
                         uri = viewModel.shareUriFor(event.photoPath),
-                        prompt = event.prompt,
+                        prompt = prompt,
                         targetPackage = settings.aiTargetPackage,
                     )
                     if (!sent) {
-                        snackbar.showSnackbar("No app could receive the photo \u2014 check Settings")
+                        snackbar.showSnackbar(context.getString(R.string.error_no_share_target))
                     }
                 }
             }
@@ -236,13 +245,13 @@ fun HomeScreen(
                     containerColor = MaterialTheme.colorScheme.surfaceVariant,
                     contentColor = MaterialTheme.colorScheme.onSurfaceVariant,
                 ) {
-                    Icon(Icons.Outlined.CameraAlt, contentDescription = "Estimate a plate with AI")
+                    Icon(Icons.Outlined.CameraAlt, contentDescription = stringResource(R.string.cd_estimate_plate))
                 }
                 FloatingActionButton(
                     onClick = { onCreateItem("") },
                     modifier = Modifier.onGloballyPositioned { plusBounds = it.boundsInRoot() },
                 ) {
-                    Icon(Icons.Default.Add, contentDescription = "New catalog item")
+                    Icon(Icons.Default.Add, contentDescription = stringResource(R.string.new_catalog_item))
                 }
             }
         },
@@ -290,7 +299,7 @@ fun HomeScreen(
                 ) {
                     if (state.query.isBlank() && state.showTip(TIP_TILE)) {
                         item(span = { GridItemSpan(maxLineSpan) }) {
-                            TipCard(TILE_TIP, { viewModel.dismissTip(TIP_TILE) })
+                            TipCard(tileTip, { viewModel.dismissTip(TIP_TILE) })
                         }
                     }
                     items(state.items, key = { it.id }) { item ->
@@ -311,7 +320,7 @@ fun HomeScreen(
                     if (state.query.isBlank() && state.showTip(TIP_TILE)) {
                         item {
                             TipCard(
-                                TILE_TIP, { viewModel.dismissTip(TIP_TILE) },
+                                tileTip, { viewModel.dismissTip(TIP_TILE) },
                                 Modifier.padding(bottom = 8.dp),
                             )
                         }
@@ -392,8 +401,8 @@ fun HomeScreen(
     if (choosingAssistant) {
         AssistantPickerDialog(
             targets = shareTargets,
-            title = "Which app should estimate the carbs?",
-            subtitle = "Glucarb sends the photo and your prompt to it. You can change this later in Settings.",
+            title = stringResource(R.string.picker_ai_title),
+            subtitle = stringResource(R.string.picker_ai_subtitle),
             onPick = { pkg, label ->
                 viewModel.setAiTarget(pkg, label)
                 choosingAssistant = false
@@ -436,7 +445,7 @@ private fun MealPanel(
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text(
-                "CURRENT MEAL",
+                stringResource(R.string.current_meal_header),
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
@@ -457,7 +466,7 @@ private fun MealPanel(
                         .padding(horizontal = 4.dp, vertical = 6.dp),
                 )
                 Text(
-                    "Now",
+                    stringResource(R.string.now),
                     style = MaterialTheme.typography.labelLarge,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onPrimaryContainer,
@@ -472,20 +481,23 @@ private fun MealPanel(
             Spacer(Modifier.weight(1f))
             Row(headerIconsModifier) {
             IconButton(onClick = onHistory) {
-                Icon(Icons.Default.History, contentDescription = "History")
+                Icon(Icons.Default.History, contentDescription = stringResource(R.string.history))
             }
             IconButton(onClick = onSettings) {
-                Icon(Icons.Default.Settings, contentDescription = "Settings")
+                Icon(Icons.Default.Settings, contentDescription = stringResource(R.string.settings))
             }
             }
         }
         Row(verticalAlignment = Alignment.CenterVertically) {
+            val carbsDescription = stringResource(
+                R.string.cd_current_meal,
+                stringResource(
+                    if (approximate) R.string.cd_carbs_approx else R.string.cd_carbs,
+                    CarbMath.formatCarbs(carbs),
+                ),
+            )
             Column(
-                Modifier.semantics {
-                    contentDescription = "Current meal: " +
-                        (if (approximate) "about " else "") +
-                        "${CarbMath.formatCarbs(carbs)} grams of carbs"
-                }
+                Modifier.semantics { contentDescription = carbsDescription }
             ) {
                 Text(
                     CarbMath.formatCarbs(carbs, approximate),
@@ -494,7 +506,7 @@ private fun MealPanel(
                     fontWeight = FontWeight.Bold,
                 )
                 Text(
-                    "g carbs",
+                    stringResource(R.string.g_carbs),
                     fontSize = 13.sp,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -519,7 +531,7 @@ private fun MealPanel(
         }
         if (showMealTip) {
             TipCard(
-                "Logging before eating? Tap Now when you start, or tap the time to set it.",
+                stringResource(R.string.tip_meal),
                 onDismissMealTip,
                 Modifier.padding(top = 8.dp, end = 8.dp),
             )
@@ -585,7 +597,7 @@ private fun SearchBar(
             value = query,
             onValueChange = onQuery,
             singleLine = true,
-            placeholder = { Text("Search\u2026") },
+            placeholder = { Text(stringResource(R.string.search_hint)) },
             leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
             keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
             keyboardActions = androidx.compose.foundation.text.KeyboardActions(
@@ -602,7 +614,9 @@ private fun SearchBar(
         IconButton(onClick = onToggleMode) {
             Icon(
                 if (gridMode) Icons.AutoMirrored.Filled.ViewList else Icons.Default.GridView,
-                contentDescription = if (gridMode) "Switch to list view" else "Switch to grid view",
+                contentDescription = stringResource(
+                    if (gridMode) R.string.cd_switch_to_list else R.string.cd_switch_to_grid,
+                ),
             )
         }
     }
@@ -622,9 +636,9 @@ private fun CreateRow(query: String, onCreate: () -> Unit) {
     ) {
         Icon(Icons.Default.Add, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
         Column(Modifier.padding(start = 12.dp)) {
-            Text("Create \u201C$query\u201D", fontWeight = FontWeight.SemiBold)
+            Text(stringResource(R.string.create_query, query), fontWeight = FontWeight.SemiBold)
             Text(
-                "New catalog item",
+                stringResource(R.string.new_catalog_item),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
@@ -639,14 +653,14 @@ private fun EmptyCatalog(onCreate: () -> Unit) {
         verticalArrangement = Arrangement.Center,
         modifier = Modifier.fillMaxSize().padding(horizontal = 32.dp),
     ) {
-        Text("Your catalog is empty", style = MaterialTheme.typography.titleMedium)
+        Text(stringResource(R.string.empty_catalog_title), style = MaterialTheme.typography.titleMedium)
         Text(
-            "Add the foods you eat often. Each one takes 20 seconds and you never type it again.",
+            stringResource(R.string.empty_catalog_body),
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.padding(vertical = 12.dp),
         )
-        Button(onClick = onCreate) { Text("Add your first item") }
+        Button(onClick = onCreate) { Text(stringResource(R.string.empty_catalog_button)) }
     }
 }
 
@@ -695,7 +709,7 @@ private fun shareToAi(
             return true
         }
     }
-    val chooser = Intent.createChooser(base, "Estimate carbs with\u2026")
+    val chooser = Intent.createChooser(base, context.getString(R.string.chooser_estimate_carbs))
     if (chooser.resolveActivity(context.packageManager) == null) return false
     context.startActivity(chooser)
     return true

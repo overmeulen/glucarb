@@ -1,0 +1,222 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    French. Every entry must match one in values/strings.xml (TranslationCompletenessTest).
+    Real UTF-8 accents are allowed here, unlike the sources; the same test rejects
+    mis-decoded (double-encoded) accents, so a cp1252 round-trip cannot slip through.
+    Vouvoiement throughout.
+-->
+<resources>
+    <string name="app_name">Glucarb</string>
+    <string name="share_target_label">Photo d\'aliment Glucarb</string>
+
+    <!-- Shared -->
+    <string name="action_undo">Annuler</string>
+    <string name="action_save">Enregistrer</string>
+    <string name="action_delete">Supprimer</string>
+    <string name="action_cancel">Annuler</string>
+    <string name="action_next">Suivant</string>
+    <string name="action_ok">OK</string>
+    <string name="action_back">Retour</string>
+    <string name="history">Historique</string>
+    <string name="settings">Réglages</string>
+    <string name="search_hint">Rechercher…</string>
+    <string name="add_to_meal">Ajouter au repas</string>
+    <string name="g_carbs">g de glucides</string>
+    <string name="carbs_amount">%1$s g de glucides</string>
+    <string name="cd_carbs">%1$s grammes de glucides</string>
+    <string name="cd_carbs_approx">environ %1$s grammes de glucides</string>
+    <string name="error_photo_failed">Échec de la photo — %1$s</string>
+    <string name="error_camera_saved_nothing">L\'appareil photo n\'a rien enregistré dans %1$s</string>
+    <string name="error_unknown">erreur inconnue</string>
+    <string name="error_export_failed">Échec de l\'export : %1$s</string>
+    <string name="error_restore_failed">Échec de la restauration : %1$s</string>
+    <string name="error_cannot_open_destination">Impossible d\'ouvrir le fichier de destination</string>
+    <string name="error_no_database">Aucune donnée à exporter pour l\'instant</string>
+    <string name="error_cannot_read_backup">Impossible de lire le fichier de sauvegarde</string>
+    <string name="error_not_a_backup">Ce fichier zip n\'est pas une sauvegarde Glucarb</string>
+
+    <!-- Home -->
+    <string name="tip_tile">Touchez un aliment pour l\'ajouter au repas. Appui long pour le modifier.</string>
+    <string name="tip_meal">Vous notez avant de manger ? Touchez Maintenant quand vous commencez, ou touchez l\'heure pour la régler.</string>
+    <string name="snackbar_entry_added">%1$s ajouté, %2$s g</string>
+    <string name="snackbar_meal_time_set">Heure du repas : %1$s</string>
+    <string name="snackbar_entry_removed">%1$s retiré</string>
+    <string name="error_no_share_target">Aucune application n\'a pu recevoir la photo — vérifiez les Réglages</string>
+    <string name="cd_estimate_plate">Estimer une assiette avec l\'IA</string>
+    <string name="new_catalog_item">Nouvel aliment</string>
+    <string name="current_meal_header">REPAS EN COURS</string>
+    <string name="now">Maintenant</string>
+    <string name="cd_current_meal">Repas en cours : %1$s</string>
+    <string name="cd_switch_to_list">Afficher en liste</string>
+    <string name="cd_switch_to_grid">Afficher en grille</string>
+    <string name="create_query">Créer « %1$s »</string>
+    <string name="empty_catalog_title">Votre catalogue est vide</string>
+    <string name="empty_catalog_body">Ajoutez les aliments que vous mangez souvent. Vingt secondes chacun, et vous ne les saisissez plus jamais.</string>
+    <string name="empty_catalog_button">Ajouter votre premier aliment</string>
+    <string name="chooser_estimate_carbs">Estimer les glucides avec…</string>
+    <string name="picker_ai_title">Quelle application doit estimer les glucides ?</string>
+    <string name="picker_ai_subtitle">Glucarb lui envoie la photo et votre consigne. Vous pourrez changer ce choix dans les Réglages.</string>
+    <string name="plate_estimate_label">Estimation d\'assiette</string>
+    <!-- Must ask for a bare number of grams: CarbTextParser reads the answer back. No digits. -->
+    <string name="default_ai_prompt">Analysez cette photo d\'aliments. Répondez UNIQUEMENT par un seul nombre : le total de glucides, en grammes, des aliments visibles. Pas de texte, pas d\'unité.</string>
+
+    <!-- Quantity sheet -->
+    <string name="unit_grams">Grammes</string>
+    <string name="unit_millilitres">Millilitres</string>
+    <string name="tip_approx">Pas sûr de la quantité ? Touchez ~ pour la noter comme approximative.</string>
+    <string name="rate_per_portion">%1$s g de glucides / %2$s</string>
+    <string name="rate_per_100">%1$s g de glucides / 100 %2$s</string>
+    <string name="cd_approximate">Approximatif</string>
+    <string name="cd_backspace">Effacer</string>
+
+    <!-- AI estimate sheet -->
+    <string name="ai_plate_estimate">Estimation d\'assiette par IA</string>
+    <string name="adhoc_found_in_clipboard">Un nombre a été trouvé dans le presse-papiers — vérifiez-le et confirmez.</string>
+    <string name="adhoc_type_number">Saisissez le nombre donné par l\'assistant.</string>
+    <string name="cd_plate_photo">Photo de l\'assiette</string>
+    <string name="action_discard">Abandonner</string>
+    <string name="action_confirm_add">Confirmer et ajouter</string>
+
+    <!-- Tutorial -->
+    <string name="action_got_it">Compris</string>
+    <string name="action_skip">Passer</string>
+    <string name="tour_catalog_title">Créez votre catalogue</string>
+    <string name="tour_catalog_body">Touchez + pour ajouter les aliments que vous mangez souvent : glucides pour 100 g ou ml, et si besoin une portion, comme une tranche. Vingt secondes chacun, saisis une seule fois.</string>
+    <string name="tour_photo_title">Impossible de peser ?</string>
+    <string name="tour_photo_body">Photographiez l\'assiette : Glucarb transmet la photo à votre assistant IA, puis vous saisissez son estimation. Toujours notée comme approximative.</string>
+    <string name="tour_history_title">Historique et réglages</string>
+    <string name="tour_history_body">Historique : chaque repas, modifiable après coup, exportable pour analyse.\nRéglages : votre application d\'IA, les sauvegardes, et cette visite guidée.</string>
+
+    <!-- Meal time dialog -->
+    <string name="meal_time">Heure du repas</string>
+    <string name="hour">Heure</string>
+    <string name="minute">Minute</string>
+    <string name="time_in_future">Cette heure est dans le futur.</string>
+
+    <!-- History -->
+    <string name="today">Aujourd\'hui</string>
+    <string name="yesterday">Hier</string>
+    <string name="past_meal">Repas passé</string>
+    <string name="past_meal_when">Repas passé — quand a-t-il commencé ?</string>
+    <string name="action_export">Exporter</string>
+    <string name="no_meals_yet">Aucun repas noté pour l\'instant.</string>
+    <string name="meal_open">en cours</string>
+    <plurals name="history_day_summary">
+        <item quantity="one">%1$d repas · %2$s g</item>
+        <item quantity="many">%1$d repas · %2$s g</item>
+        <item quantity="other">%1$d repas · %2$s g</item>
+    </plurals>
+    <plurals name="exported_meals">
+        <item quantity="one">%1$d repas exporté</item>
+        <item quantity="many">%1$d repas exportés</item>
+        <item quantity="other">%1$d repas exportés</item>
+    </plurals>
+    <string name="no_meals_in_period">Aucun repas noté sur cette période</string>
+    <string name="export_meals">Exporter les repas</string>
+    <string name="export_description">Un fichier CSV avec une ligne par aliment consommé — heure du repas, aliment, grammes de glucides et s\'il était approximatif — prêt à confier à un assistant pour analyse.</string>
+    <string name="range_last_7_days">7 derniers jours</string>
+    <string name="range_last_30_days">30 derniers jours</string>
+    <string name="range_last_3_months">3 derniers mois</string>
+    <string name="range_everything">Tout</string>
+    <string name="range_from_date">Depuis le %1$s</string>
+    <string name="range_from_a_date">Depuis une date…</string>
+    <string name="use_this_date">Utiliser cette date</string>
+    <string name="action_share">Partager</string>
+    <string name="save_file">Enregistrer le fichier</string>
+
+    <!-- Meal detail -->
+    <string name="past_meal_added">Repas passé ajouté</string>
+    <string name="new_past_meal">Nouveau repas passé</string>
+    <string name="started_at">Commencé à</string>
+    <string name="add_item">Ajouter un aliment</string>
+    <string name="entry_pending">en attente</string>
+    <string name="entry_estimate">Estimation</string>
+    <string name="estimate_edit_hint">Estimation — modifiez directement la quantité de glucides.</string>
+
+    <!-- Item editor -->
+    <string name="new_item">Nouvel aliment</string>
+    <string name="edit_item">Modifier l\'aliment</string>
+    <string name="item_name">Nom</string>
+    <string name="toast_web_share_back">Appui long sur une image, puis Partager → Glucarb</string>
+    <string name="error_no_browser">Aucun navigateur trouvé pour la recherche</string>
+    <string name="measurement_unit_header">UNITÉ DE MESURE</string>
+    <string name="carbs_per_100">Glucides pour 100 %1$s</string>
+    <string name="available_in_portions">Disponible en portions</string>
+    <string name="portions_examples">Tranches, unités, cuillères…</string>
+    <string name="portion_name">Nom de la portion</string>
+    <string name="weight_of_one">Poids d\'une portion</string>
+    <string name="portion_preview">1 %1$s = %2$s %3$s = %4$s g de glucides</string>
+    <string name="approximate_by_default">Approximatif par défaut</string>
+    <string name="approximate_by_default_hint">Pour les aliments que vous ne pouvez qu\'estimer, comme les plats au restaurant</string>
+    <string name="archive_item">Archiver cet aliment</string>
+    <string name="archive_hint">L\'archiver le masque de l\'écran d\'accueil. Les repas passés gardent leurs valeurs.</string>
+    <string name="using_a_photo">Photo utilisée</string>
+    <string name="type_name_for_icons">Saisissez un nom pour obtenir des suggestions d\'icônes.</string>
+    <string name="action_icons">Icônes</string>
+    <string name="action_camera">Appareil photo</string>
+    <string name="action_gallery">Galerie</string>
+    <string name="action_web">Web</string>
+    <string name="action_clear">Effacer</string>
+    <string name="search_icons">Rechercher une icône</string>
+    <string name="no_icon_match">Aucune icône ne correspond à cette recherche.</string>
+    <string name="icon_results">Résultats</string>
+    <string name="unit_grams_long">Grammes (g)</string>
+    <string name="unit_millilitres_long">Millilitres (ml)</string>
+    <string name="icon_category_fruit">Fruits</string>
+    <string name="icon_category_vegetable">Légumes</string>
+    <string name="icon_category_grain">Pain et céréales</string>
+    <string name="icon_category_dish">Plats</string>
+    <string name="icon_category_protein">Protéines et laitages</string>
+    <string name="icon_category_sweet">Sucreries</string>
+    <string name="icon_category_drink">Boissons</string>
+    <string name="icon_category_other">Autres</string>
+
+    <!-- Settings -->
+    <string name="section_ai">Estimation des glucides par IA</string>
+    <string name="assistant_app">Application assistant</string>
+    <string name="assistant_ask_every_time_share_sheet">Demander à chaque fois (menu de partage)</string>
+    <string name="assistant_not_chosen">Pas encore choisie</string>
+    <string name="action_change">Changer</string>
+    <string name="action_choose">Choisir</string>
+    <string name="prompt_label">Consigne envoyée avec la photo</string>
+    <string name="reset_to_default">Rétablir par défaut</string>
+    <string name="save_prompt">Enregistrer la consigne</string>
+    <string name="section_meals">Repas</string>
+    <string name="idle_timeout_label">Clore le repas après ce nombre de minutes d\'inactivité</string>
+    <string name="save_timeout">Enregistrer le délai</string>
+    <string name="section_backup">Sauvegarde</string>
+    <string name="backup_automatic">Automatique : Android sauvegarde votre catalogue, vos photos et votre historique sur votre compte Google quand la sauvegarde de l\'appareil est activée.</string>
+    <string name="manual_backup">Sauvegarde manuelle</string>
+    <string name="manual_backup_hint">Enregistrez tout dans un fichier que vous conservez, ou restaurez à partir de celui-ci.</string>
+    <string name="restore_from_file">Restaurer un fichier</string>
+    <string name="save_to_file">Enregistrer un fichier</string>
+    <string name="section_language">Langue</string>
+    <string name="app_language">Langue de l\'application</string>
+    <string name="follows_phone_language">Suit la langue du téléphone</string>
+    <string name="section_help">Aide</string>
+    <string name="show_tour_again">Revoir la visite guidée</string>
+    <string name="replay">Revoir</string>
+    <string name="restore_confirm_title">Restaurer cette sauvegarde ?</string>
+    <string name="restore_confirm_body">Elle remplace tout le contenu actuel de l\'application.</string>
+    <string name="action_restore">Restaurer</string>
+    <string name="backup_restored">Sauvegarde restaurée</string>
+    <string name="backup_restart_body">Glucarb doit redémarrer pour charger les données restaurées. Rouvrez ensuite l\'application depuis votre écran d\'accueil.</string>
+    <string name="close_app">Fermer l\'application</string>
+    <plurals name="backup_saved">
+        <item quantity="one">Sauvegarde enregistrée (%1$d photo)</item>
+        <item quantity="many">Sauvegarde enregistrée (%1$d photos)</item>
+        <item quantity="other">Sauvegarde enregistrée (%1$d photos)</item>
+    </plurals>
+
+    <!-- Assistant picker -->
+    <string name="send_photos_to">Envoyer les photos à</string>
+    <string name="no_app_accepts_images">Aucune application de cet appareil n\'accepte les images partagées.</string>
+    <string name="ask_every_time">Demander à chaque fois</string>
+
+    <!-- Crash report -->
+    <string name="crash_title">Glucarb s\'est arrêté de façon inattendue</string>
+    <string name="crash_body">Un rapport de plantage a été enregistré sur ce téléphone. L\'envoyer aide à corriger le problème. Il contient les détails de l\'erreur et le modèle de votre téléphone, aucun de vos repas ni de vos aliments.</string>
+    <string name="crash_chooser">Envoyer le rapport de plantage</string>
+    <string name="crash_send">Envoyer le rapport</string>
+    <string name="crash_dont_send">Ne pas envoyer</string>
+</resources>

@@ -2,6 +2,7 @@ package com.glucarb.data.repo
 
 import android.content.Context
 import android.net.Uri
+import com.glucarb.R
 import com.glucarb.data.CarbDatabase
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -43,11 +44,11 @@ class BackupManager(
             checkpoint()
             var photoCount = 0
             val output = context.contentResolver.openOutputStream(target)
-                ?: error("Cannot open the destination file")
+                ?: error(context.getString(R.string.error_cannot_open_destination))
 
             ZipOutputStream(output.buffered()).use { zip ->
                 val dbFile = context.getDatabasePath(CarbDatabase.NAME)
-                require(dbFile.exists()) { "No database to export yet" }
+                require(dbFile.exists()) { context.getString(R.string.error_no_database) }
                 zip.putNextEntry(ZipEntry(DB_ENTRY))
                 dbFile.inputStream().use { it.copyTo(zip) }
                 zip.closeEntry()
@@ -106,9 +107,9 @@ class BackupManager(
                         entry = zip.nextEntry
                     }
                 }
-            } ?: error("Cannot read the backup file")
+            } ?: error(context.getString(R.string.error_cannot_read_backup))
 
-            require(sawDatabase) { "This zip is not a Glucarb backup" }
+            require(sawDatabase) { context.getString(R.string.error_not_a_backup) }
 
             checkpoint()
             database.close()

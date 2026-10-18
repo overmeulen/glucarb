@@ -53,11 +53,16 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.res.stringResource
+import com.glucarb.R
 import com.glucarb.data.dao.MealWithEntries
 import com.glucarb.data.entity.MealEntry
 import com.glucarb.domain.CarbMath
 import com.glucarb.domain.MealCsvExport
 import com.glucarb.ui.common.MealTimeDialog
+import com.glucarb.ui.common.asString
+import com.glucarb.ui.common.weekdayDate
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -85,7 +90,7 @@ fun HistoryScreen(
     LaunchedEffect(Unit) {
         viewModel.events.collect { event ->
             when (event) {
-                is ExportEvent.Message -> snackbar.showSnackbar(event.text)
+                is ExportEvent.Message -> snackbar.showSnackbar(event.text.asString(context))
                 is ExportEvent.Share -> shareCsv(context, event.uri)
             }
         }
@@ -97,15 +102,15 @@ fun HistoryScreen(
             ExtendedFloatingActionButton(
                 onClick = { pastMealAt = System.currentTimeMillis() },
                 icon = { Icon(Icons.Filled.Add, contentDescription = null) },
-                text = { Text("Past meal") },
+                text = { Text(stringResource(R.string.past_meal)) },
             )
         },
         topBar = {
             TopAppBar(
-                title = { Text("History") },
+                title = { Text(stringResource(R.string.history)) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.action_back))
                     }
                 },
                 actions = {
@@ -116,7 +121,7 @@ fun HistoryScreen(
                         )
                     } else if (days.isNotEmpty()) {
                         IconButton(onClick = { exportDialog = true }) {
-                            Icon(Icons.Filled.IosShare, contentDescription = "Export")
+                            Icon(Icons.Filled.IosShare, contentDescription = stringResource(R.string.action_export))
                         }
                     }
                 },
@@ -126,7 +131,7 @@ fun HistoryScreen(
         if (days.isEmpty()) {
             Box(Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) {
                 Text(
-                    "No meals logged yet.",
+                    stringResource(R.string.no_meals_yet),
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
@@ -146,9 +151,14 @@ fun HistoryScreen(
                         verticalAlignment = Alignment.Bottom,
                         modifier = Modifier.fillMaxWidth().padding(top = 16.dp, bottom = 8.dp),
                     ) {
-                        Text(day.label, fontWeight = FontWeight.SemiBold, modifier = Modifier.weight(1f))
+                        Text(dayTitle(day.dayStart), fontWeight = FontWeight.SemiBold, modifier = Modifier.weight(1f))
                         Text(
-                            "${day.meals.size} meals \u00B7 ${CarbMath.formatCarbs(day.carbs)} g",
+                            pluralStringResource(
+                                R.plurals.history_day_summary,
+                                day.meals.size,
+                                day.meals.size,
+                                CarbMath.formatCarbs(day.carbs),
+                            ),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
@@ -165,8 +175,8 @@ fun HistoryScreen(
         MealTimeDialog(
             initial = initial,
             showDate = true,
-            title = "Past meal \u2014 when did it start?",
-            confirmLabel = "Next",
+            title = stringResource(R.string.past_meal_when),
+            confirmLabel = stringResource(R.string.action_next),
             allowFuture = false,
             onDismiss = { pastMealAt = null },
             onSave = { millis ->
@@ -194,6 +204,17 @@ fun HistoryScreen(
     }
 }
 
+/** "Today", "Yesterday", else the weekday and date ("Monday 6 October", "Lundi 6 octobre"). */
+@Composable
+private fun dayTitle(dayStart: Long): String {
+    val today = ExportRange.startOfDay(System.currentTimeMillis())
+    return when (dayStart) {
+        today -> stringResource(R.string.today)
+        ExportRange.startOfDay(today - 1) -> stringResource(R.string.yesterday)
+        else -> weekdayDate(dayStart)
+    }
+}
+
 @Composable
 private fun MealRow(meal: MealWithEntries, onClick: () -> Unit) {
     val time = SimpleDateFormat("HH:mm", Locale.getDefault()).format(Date(meal.meal.startedAt))
@@ -215,7 +236,7 @@ private fun MealRow(meal: MealWithEntries, onClick: () -> Unit) {
         )
         if (meal.meal.isOpen) {
             Text(
-                "open",
+                stringResource(R.string.meal_open),
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onPrimaryContainer,
                 modifier = Modifier
@@ -260,7 +281,7 @@ private fun shareCsv(context: android.content.Context, uri: android.net.Uri) {
     }
     runCatching {
         context.startActivity(
-            android.content.Intent.createChooser(intent, "Export meals").apply {
+            android.content.Intent.createChooser(intent, context.getString(R.string.export_meals)).apply {
                 addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)
             },
         )

@@ -181,7 +181,7 @@ class MealCsvExportTest {
         val todayStart = ExportRange.startOfDay(noon, paris)
         ExportRange.entries.forEach { range ->
             assertTrue(
-                "${range.label} must include the day in progress",
+                "${range.name} must include the day in progress",
                 range.startFrom(noon, paris) <= todayStart,
             )
         }

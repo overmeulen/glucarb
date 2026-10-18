@@ -152,11 +152,10 @@ private fun CrashReportPrompt() {
     }
     androidx.compose.material3.AlertDialog(
         onDismissRequest = close,
-        title = { androidx.compose.material3.Text("Glucarb closed unexpectedly") },
+        title = { androidx.compose.material3.Text(androidx.compose.ui.res.stringResource(R.string.crash_title)) },
         text = {
             androidx.compose.material3.Text(
-                "A crash report was saved on this phone. Sending it helps fix the problem. " +
-                    "It contains the error details and your phone model, none of your meals or items.",
+                androidx.compose.ui.res.stringResource(R.string.crash_body),
             )
         },
         confirmButton = {
@@ -166,13 +165,13 @@ private fun CrashReportPrompt() {
                     .putExtra(Intent.EXTRA_EMAIL, arrayOf(CrashReporter.CONTACT_EMAIL))
                     .putExtra(Intent.EXTRA_SUBJECT, "Glucarb crash report")
                     .putExtra(Intent.EXTRA_TEXT, text)
-                runCatching { context.startActivity(Intent.createChooser(send, "Send crash report")) }
+                runCatching { context.startActivity(Intent.createChooser(send, context.getString(R.string.crash_chooser))) }
                 close()
-            }) { androidx.compose.material3.Text("Send report") }
+            }) { androidx.compose.material3.Text(androidx.compose.ui.res.stringResource(R.string.crash_send)) }
         },
         dismissButton = {
             androidx.compose.material3.TextButton(onClick = close) {
-                androidx.compose.material3.Text("Don't send")
+                androidx.compose.material3.Text(androidx.compose.ui.res.stringResource(R.string.crash_dont_send))
             }
         },
     )

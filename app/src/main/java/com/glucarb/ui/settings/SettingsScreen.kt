@@ -46,7 +46,9 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.glucarb.data.repo.AppSettings
+import androidx.compose.ui.res.stringResource
+import com.glucarb.R
+import com.glucarb.ui.common.asString
 import com.glucarb.data.repo.BackupManager
 import kotlin.system.exitProcess
 
@@ -76,13 +78,16 @@ fun SettingsScreen(
     LaunchedEffect(Unit) {
         viewModel.events.collect { event ->
             when (event) {
-                is BackupEvent.Message -> snackbar.showSnackbar(event.text)
+                is BackupEvent.Message -> snackbar.showSnackbar(event.text.asString(context))
                 BackupEvent.RestartRequired -> restartPending = true
             }
         }
     }
 
-    var prompt by remember(settings.aiPrompt) { mutableStateOf(settings.aiPrompt) }
+    // Null means "never customised": show the default in the current language.
+    val defaultPrompt = stringResource(R.string.default_ai_prompt)
+    val savedPrompt = settings.aiPrompt ?: defaultPrompt
+    var prompt by remember(savedPrompt) { mutableStateOf(savedPrompt) }
     var idle by remember(settings.idleTimeoutMinutes) {
         mutableStateOf(settings.idleTimeoutMinutes.toString())
     }
@@ -93,10 +98,10 @@ fun SettingsScreen(
         snackbarHost = { SnackbarHost(snackbar) },
         topBar = {
             TopAppBar(
-                title = { Text("Settings") },
+                title = { Text(stringResource(R.string.settings)) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.action_back))
                     }
                 },
             )
@@ -112,7 +117,7 @@ fun SettingsScreen(
                 .verticalScroll(rememberScrollState())
                 .padding(horizontal = 16.dp),
         ) {
-            SectionTitle("AI carb estimation")
+            SectionTitle(stringResource(R.string.section_ai))
 
             Row(
                 verticalAlignment = Alignment.CenterVertically,
@@ -124,22 +129,24 @@ fun SettingsScreen(
                     .padding(14.dp),
             ) {
                 Column(Modifier.weight(1f)) {
-                    Text("Assistant app")
+                    Text(stringResource(R.string.assistant_app))
                     Text(
                         settings.aiTargetLabel
-                            ?: if (settings.aiTargetChosen) "Ask every time (system share sheet)"
-                            else "Not chosen yet",
+                            ?: stringResource(
+                                if (settings.aiTargetChosen) R.string.assistant_ask_every_time_share_sheet
+                                else R.string.assistant_not_chosen,
+                            ),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
-                Text(if (settings.aiTargetChosen) "Change" else "Choose", color = MaterialTheme.colorScheme.primary)
+                Text(stringResource(if (settings.aiTargetChosen) R.string.action_change else R.string.action_choose), color = MaterialTheme.colorScheme.primary)
             }
 
             OutlinedTextField(
                 value = prompt,
                 onValueChange = { prompt = it },
-                label = { Text("Prompt sent with the photo") },
+                label = { Text(stringResource(R.string.prompt_label)) },
                 minLines = 3,
                 modifier = Modifier.fillMaxWidth().padding(top = 14.dp),
             )
@@ -147,21 +154,21 @@ fun SettingsScreen(
                 horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.End),
                 modifier = Modifier.fillMaxWidth().padding(top = 4.dp),
             ) {
-                TextButton(onClick = { prompt = AppSettings.DEFAULT_AI_PROMPT }) {
-                    Text("Reset to default")
+                TextButton(onClick = { prompt = defaultPrompt }) {
+                    Text(stringResource(R.string.reset_to_default))
                 }
                 TextButton(
                     onClick = { viewModel.setPrompt(prompt) },
-                    enabled = prompt != settings.aiPrompt,
-                ) { Text("Save prompt") }
+                    enabled = prompt != savedPrompt,
+                ) { Text(stringResource(R.string.save_prompt)) }
             }
 
-            SectionTitle("Meals")
+            SectionTitle(stringResource(R.string.section_meals))
 
             OutlinedTextField(
                 value = idle,
                 onValueChange = { idle = it.filter { c -> c.isDigit() }.take(4) },
-                label = { Text("Close the meal after this many idle minutes") },
+                label = { Text(stringResource(R.string.idle_timeout_label)) },
                 singleLine = true,
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                 modifier = Modifier.fillMaxWidth(),
@@ -170,23 +177,22 @@ fun SettingsScreen(
                 TextButton(
                     onClick = { idle.toIntOrNull()?.let(viewModel::setIdleTimeout) },
                     enabled = idle.toIntOrNull()?.let { it != settings.idleTimeoutMinutes } == true,
-                ) { Text("Save timeout") }
+                ) { Text(stringResource(R.string.save_timeout)) }
             }
 
-            SectionTitle("Backup")
+            SectionTitle(stringResource(R.string.section_backup))
             Text(
-                "Automatic: Android backs up your catalog, photos and history to your " +
-                    "Google account when device backup is on.",
+                stringResource(R.string.backup_automatic),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
             Text(
-                "Manual backup",
+                stringResource(R.string.manual_backup),
                 style = MaterialTheme.typography.titleSmall,
                 modifier = Modifier.padding(top = 14.dp),
             )
             Text(
-                "Save everything to a file you keep, or restore from one.",
+                stringResource(R.string.manual_backup_hint),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
@@ -197,14 +203,17 @@ fun SettingsScreen(
                 TextButton(
                     onClick = { importLauncher.launch(arrayOf(BackupManager.MIME_TYPE)) },
                     enabled = !busy,
-                ) { Text("Restore from file") }
+                ) { Text(stringResource(R.string.restore_from_file)) }
                 TextButton(
                     onClick = { exportLauncher.launch(BackupManager.suggestedFileName()) },
                     enabled = !busy,
-                ) { Text("Save to file") }
+                ) { Text(stringResource(R.string.save_to_file)) }
             }
 
-            SectionTitle("Help")
+            SectionTitle(stringResource(R.string.section_language))
+            LanguageRow()
+
+            SectionTitle(stringResource(R.string.section_help))
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier
@@ -217,8 +226,8 @@ fun SettingsScreen(
                     }
                     .padding(14.dp),
             ) {
-                Text("Show the tour again", modifier = Modifier.weight(1f))
-                Text("Replay", color = MaterialTheme.colorScheme.primary)
+                Text(stringResource(R.string.show_tour_again), modifier = Modifier.weight(1f))
+                Text(stringResource(R.string.replay), color = MaterialTheme.colorScheme.primary)
             }
             Spacer(Modifier.height(32.dp))
         }
@@ -227,14 +236,14 @@ fun SettingsScreen(
     pendingRestore?.let { uri ->
         AlertDialog(
             onDismissRequest = { pendingRestore = null },
-            title = { Text("Restore this backup?") },
-            text = { Text("It replaces everything currently in the app.") },
-            dismissButton = { TextButton(onClick = { pendingRestore = null }) { Text("Cancel") } },
+            title = { Text(stringResource(R.string.restore_confirm_title)) },
+            text = { Text(stringResource(R.string.restore_confirm_body)) },
+            dismissButton = { TextButton(onClick = { pendingRestore = null }) { Text(stringResource(R.string.action_cancel)) } },
             confirmButton = {
                 TextButton(onClick = {
                     pendingRestore = null
                     viewModel.importFrom(uri)
-                }) { Text("Restore", color = MaterialTheme.colorScheme.error) }
+                }) { Text(stringResource(R.string.action_restore), color = MaterialTheme.colorScheme.error) }
             },
         )
     }
@@ -242,12 +251,9 @@ fun SettingsScreen(
     if (restartPending) {
         AlertDialog(
             onDismissRequest = {},
-            title = { Text("Backup restored") },
+            title = { Text(stringResource(R.string.backup_restored)) },
             text = {
-                Text(
-                    "Glucarb has to restart to load the restored data. " +
-                        "Reopen the app from your launcher afterwards.",
-                )
+                Text(stringResource(R.string.backup_restart_body))
             },
             confirmButton = {
                 TextButton(
@@ -255,7 +261,7 @@ fun SettingsScreen(
                         context.findActivity()?.finishAndRemoveTask()
                         exitProcess(0)
                     },
-                ) { Text("Close app") }
+                ) { Text(stringResource(R.string.close_app)) }
             },
         )
     }
@@ -272,10 +278,65 @@ fun SettingsScreen(
     }
 }
 
+/**
+ * The app language. Android 13+ has a per-app language screen, so the row opens it; older
+ * versions have none, and the app simply follows the phone.
+ */
+@Composable
+private fun LanguageRow() {
+    val context = LocalContext.current
+    val perAppLanguage = android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU
+    val locale = java.util.Locale.getDefault()
+    val current = locale.getDisplayLanguage(locale).replaceFirstChar { it.titlecase(locale) }
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(12.dp))
+            .background(MaterialTheme.colorScheme.surfaceVariant)
+            .then(
+                if (perAppLanguage) {
+                    Modifier.clickable {
+                        runCatching {
+                            context.startActivity(
+                                android.content.Intent(
+                                    android.provider.Settings.ACTION_APP_LOCALE_SETTINGS,
+                                    android.net.Uri.fromParts("package", context.packageName, null),
+                                ),
+                            )
+                        }
+                    }
+                } else {
+                    Modifier
+                },
+            )
+            .padding(14.dp),
+    ) {
+        Column(Modifier.weight(1f)) {
+            Text(stringResource(R.string.app_language))
+            Text(
+                current,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            if (!perAppLanguage) {
+                Text(
+                    stringResource(R.string.follows_phone_language),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+        }
+        if (perAppLanguage) {
+            Text(stringResource(R.string.action_change), color = MaterialTheme.colorScheme.primary)
+        }
+    }
+}
+
 @Composable
 private fun SectionTitle(text: String) {
     Text(
-        text.uppercase(),
+        text.uppercase(java.util.Locale.getDefault()),
         style = MaterialTheme.typography.labelSmall,
         fontWeight = FontWeight.Bold,
         color = MaterialTheme.colorScheme.onSurfaceVariant,

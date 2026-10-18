@@ -57,9 +57,11 @@ import com.glucarb.ui.common.FoodRow
 import com.glucarb.ui.common.MealTimeDialog
 import com.glucarb.ui.home.QuantitySheet
 import java.text.DateFormat
-import java.text.SimpleDateFormat
 import java.util.Date
-import java.util.Locale
+import androidx.compose.ui.res.stringResource
+import com.glucarb.R
+import com.glucarb.ui.common.DecimalDisplayTransformation
+import com.glucarb.ui.common.weekdayDate
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -75,6 +77,7 @@ fun MealDetailScreen(
     val pickerItems by viewModel.pickerItems.collectAsStateWithLifecycle()
     var editingTime by remember { mutableStateOf(false) }
     val snackbar = remember { SnackbarHostState() }
+    val context = androidx.compose.ui.platform.LocalContext.current
     val newMealAt = state.newMealAt
 
     // Deleting the last entry deletes the meal; there is nothing left to show.
@@ -86,8 +89,8 @@ fun MealDetailScreen(
             when (event) {
                 is MealDetailEvent.PastMealAdded -> {
                     val result = snackbar.showSnackbar(
-                        message = "Past meal added",
-                        actionLabel = "Undo",
+                        message = context.getString(R.string.past_meal_added),
+                        actionLabel = context.getString(R.string.action_undo),
                         duration = SnackbarDuration.Short,
                     )
                     if (result == SnackbarResult.ActionPerformed) viewModel.undoPastMeal(event.entryId)
@@ -105,7 +108,7 @@ fun MealDetailScreen(
 
     if (picking && (meal != null || newMealAt != null)) {
         AddItemPicker(
-            title = if (newMealAt != null) "New past meal" else "Add to meal",
+            title = stringResource(if (newMealAt != null) R.string.new_past_meal else R.string.add_to_meal),
             subtitle = daySubtitle(newMealAt ?: meal!!.meal.startedAt),
             query = query,
             onQuery = viewModel::setQuery,
@@ -120,14 +123,12 @@ fun MealDetailScreen(
                 TopAppBar(
                     title = {
                         Text(
-                            startedAt?.let {
-                                SimpleDateFormat("EEEE d MMMM", Locale.getDefault()).format(Date(it))
-                            }.orEmpty(),
+                            startedAt?.let { weekdayDate(it) }.orEmpty(),
                         )
                     },
                     navigationIcon = {
                         IconButton(onClick = onBack) {
-                            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.action_back))
                         }
                     },
                 )
@@ -142,7 +143,7 @@ fun MealDetailScreen(
             ) {
                 item {
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text("Started at ", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text(stringResource(R.string.started_at) + " ", color = MaterialTheme.colorScheme.onSurfaceVariant)
                         Text(
                             DateFormat.getTimeInstance(DateFormat.SHORT).format(Date(meal.meal.startedAt)),
                             color = MaterialTheme.colorScheme.primary,
@@ -163,7 +164,7 @@ fun MealDetailScreen(
                             fontWeight = FontWeight.Bold,
                         )
                         Text(
-                            " g carbs",
+                            " " + stringResource(R.string.g_carbs),
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier.padding(bottom = 8.dp),
                         )
@@ -178,7 +179,7 @@ fun MealDetailScreen(
                         modifier = Modifier.fillMaxWidth().padding(top = 12.dp),
                     ) {
                         Icon(Icons.Default.Add, contentDescription = null)
-                        Text("Add item", modifier = Modifier.padding(start = 8.dp))
+                        Text(stringResource(R.string.add_item), modifier = Modifier.padding(start = 8.dp))
                     }
                 }
             }
@@ -221,7 +222,7 @@ fun MealDetailScreen(
 }
 
 private fun daySubtitle(startedAt: Long): String {
-    val day = SimpleDateFormat("EEEE d MMMM", Locale.getDefault()).format(Date(startedAt))
+    val day = weekdayDate(startedAt)
     val time = DateFormat.getTimeInstance(DateFormat.SHORT).format(Date(startedAt))
     return "$day \u00B7 $time"
 }
@@ -251,7 +252,7 @@ private fun EntryRow(entry: MealEntry, onClick: () -> Unit) {
             }
         }
         Text(
-            if (entry.aiPending) "pending"
+            if (entry.aiPending) stringResource(R.string.entry_pending)
             else "${CarbMath.formatCarbs(entry.carbs, entry.approximate)} g",
             fontWeight = FontWeight.Bold,
             color = if (entry.aiPending) MaterialTheme.colorScheme.tertiary
@@ -286,7 +287,7 @@ private fun AddItemPicker(
                 },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.action_back))
                     }
                 },
             )
@@ -297,7 +298,7 @@ private fun AddItemPicker(
                 value = query,
                 onValueChange = onQuery,
                 singleLine = true,
-                placeholder = { Text("Search\u2026") },
+                placeholder = { Text(stringResource(R.string.search_hint)) },
                 leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
                 keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
                 shape = RoundedCornerShape(12.dp),
@@ -317,11 +318,12 @@ private fun AddItemPicker(
     }
 }
 
+@Composable
 private fun entryAmount(entry: MealEntry): String = when {
-    entry.foodItemId == null -> "Estimate"
+    entry.foodItemId == null -> stringResource(R.string.entry_estimate)
     entry.enteredAsPortions && entry.portionsValue != null ->
-        "${CarbMath.format(entry.portionsValue)} \u00D7"
-    else -> "${CarbMath.format(entry.quantity)} ${entry.unit.label}"
+        "${CarbMath.formatLocal(entry.portionsValue)} \u00D7"
+    else -> "${CarbMath.formatLocal(entry.quantity)} ${entry.unit.label}"
 }
 
 @Composable
@@ -338,7 +340,7 @@ private fun EditEntryDialog(
         text = {
             Column {
                 Text(
-                    "Estimate \u2014 edit the carb figure directly.",
+                    stringResource(R.string.estimate_edit_hint),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -348,7 +350,8 @@ private fun EditEntryDialog(
                         text = input.replace(',', '.').filter { it.isDigit() || it == '.' }.take(7)
                     },
                     singleLine = true,
-                    suffix = { Text("g carbs") },
+                    suffix = { Text(stringResource(R.string.g_carbs)) },
+                    visualTransformation = DecimalDisplayTransformation(),
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                     modifier = Modifier.padding(top = 10.dp),
                 )
@@ -357,14 +360,14 @@ private fun EditEntryDialog(
         // Delete on the left of Save: the primary action sits where the thumb rests.
         dismissButton = {
             TextButton(onClick = onDelete) {
-                Text("Delete", color = MaterialTheme.colorScheme.error)
+                Text(stringResource(R.string.action_delete), color = MaterialTheme.colorScheme.error)
             }
         },
         confirmButton = {
             TextButton(
                 onClick = { text.toDoubleOrNull()?.let(onSave) },
                 enabled = (text.toDoubleOrNull() ?: 0.0) > 0.0,
-            ) { Text("Save") }
+            ) { Text(stringResource(R.string.action_save)) }
         },
     )
 }

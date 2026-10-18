@@ -2,13 +2,16 @@ package com.glucarb.ui.history
 
 import android.net.Uri
 import androidx.lifecycle.ViewModel
+import androidx.annotation.StringRes
 import androidx.lifecycle.viewModelScope
+import com.glucarb.R
 import com.glucarb.data.dao.MealWithEntries
 import com.glucarb.data.entity.MealEntry
 import com.glucarb.data.repo.ExportResult
 import com.glucarb.data.repo.FoodRepository
 import com.glucarb.data.repo.MealExporter
 import com.glucarb.data.repo.MealRepository
+import com.glucarb.ui.common.UiText
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
@@ -25,8 +28,8 @@ import java.time.ZoneId
 import java.util.Calendar
 import javax.inject.Inject
 
+/** One day of history. Its title ("Today", a date...) is worded by the UI, in its language. */
 data class DayGroup(
-    val label: String,
     val dayStart: Long,
     val meals: List<MealWithEntries>,
 ) {
@@ -40,11 +43,11 @@ data class DayGroup(
  * included: asking for the last 7 days and getting a file that stops at yesterday would
  * be wrong every single time it is used.
  */
-enum class ExportRange(val label: String, val daysBack: Int?) {
-    WEEK("Last 7 days", 6),
-    MONTH("Last 30 days", 29),
-    QUARTER("Last 3 months", 89),
-    ALL("Everything", null);
+enum class ExportRange(@StringRes val label: Int, val daysBack: Int?) {
+    WEEK(R.string.range_last_7_days, 6),
+    MONTH(R.string.range_last_30_days, 29),
+    QUARTER(R.string.range_last_3_months, 89),
+    ALL(R.string.range_everything, null);
 
     /** Epoch millis this range starts at. There is no end bound - the file runs to now. */
     fun startFrom(now: Long, zone: ZoneId = ZoneId.systemDefault()): Long {
@@ -67,7 +70,7 @@ enum class ExportRange(val label: String, val daysBack: Int?) {
 }
 
 sealed interface ExportEvent {
-    data class Message(val text: String) : ExportEvent
+    data class Message(val text: UiText) : ExportEvent
 
     /** The CSV is written and ready to hand to another app. */
     data class Share(val uri: Uri) : ExportEvent
@@ -138,7 +141,7 @@ class HistoryViewModel @Inject constructor(
                 ExportEvent.Message(
                     outcome.fold(
                         onSuccess = {
-                            if (it.meals == 0) EMPTY else "Exported ${it.meals} meals"
+                            if (it.meals == 0) EMPTY else UiText.Plural(R.plurals.exported_meals, it.meals)
                         },
                         onFailure = ::failure,
                     ),
@@ -147,23 +150,15 @@ class HistoryViewModel @Inject constructor(
         }
     }
 
-    private fun failure(error: Throwable): String =
-        "Export failed: ${error.message ?: "unknown error"}"
+    private fun failure(error: Throwable): UiText =
+        UiText.Res(R.string.error_export_failed, error.message ?: UiText.Res(R.string.error_unknown))
 
     private fun groupByDay(meals: List<MealWithEntries>): List<DayGroup> {
-        val today = startOfDay(System.currentTimeMillis())
         return meals
             .groupBy { startOfDay(it.meal.startedAt) }
             .toSortedMap(compareByDescending { it })
             .map { (dayStart, dayMeals) ->
                 DayGroup(
-                    label = when (dayStart) {
-                        today -> "Today"
-                        today - DAY_MS -> "Yesterday"
-                        else -> java.text.SimpleDateFormat(
-                            "EEEE d MMMM", java.util.Locale.getDefault(),
-                        ).format(java.util.Date(dayStart))
-                    },
                     dayStart = dayStart,
                     meals = dayMeals.sortedByDescending { it.meal.startedAt },
                 )
@@ -179,7 +174,6 @@ class HistoryViewModel @Inject constructor(
     }.timeInMillis
 
     private companion object {
-        const val DAY_MS = 24 * 60 * 60 * 1000L
-        const val EMPTY = "No meals logged in that period"
+        val EMPTY = UiText.Res(R.string.no_meals_in_period)
     }
 }

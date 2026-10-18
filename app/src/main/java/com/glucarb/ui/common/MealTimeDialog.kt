@@ -40,6 +40,7 @@ import java.util.TimeZone
  *
  * [initial] is epoch millis. [showDate] adds a tappable date row (History); Home only ever
  * changes the time of the running meal. [onSave] receives the new epoch millis.
+ * [allowFuture] false refuses a time after now: a meal being logged after the fact.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -48,6 +49,9 @@ fun MealTimeDialog(
     showDate: Boolean,
     onDismiss: () -> Unit,
     onSave: (Long) -> Unit,
+    title: String = "Meal time",
+    confirmLabel: String = "Save",
+    allowFuture: Boolean = true,
 ) {
     val cal = remember(initial) { Calendar.getInstance().apply { timeInMillis = initial } }
     var hour by remember(initial) { mutableStateOf("%02d".format(cal.get(Calendar.HOUR_OF_DAY))) }
@@ -57,11 +61,23 @@ fun MealTimeDialog(
 
     val h = hour.toIntOrNull()
     val m = minute.toIntOrNull()
-    val valid = h != null && m != null && h in 0..23 && m in 0..59
+    val chosen = if (h != null && m != null && h in 0..23 && m in 0..59) {
+        Calendar.getInstance().apply {
+            timeInMillis = day
+            set(Calendar.HOUR_OF_DAY, h)
+            set(Calendar.MINUTE, m)
+            set(Calendar.SECOND, 0)
+            set(Calendar.MILLISECOND, 0)
+        }.timeInMillis
+    } else {
+        null
+    }
+    val inFuture = !allowFuture && chosen != null && chosen > System.currentTimeMillis()
+    val valid = chosen != null && !inFuture
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Meal time") },
+        title = { Text(title) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
                 if (showDate) {
@@ -83,22 +99,22 @@ fun MealTimeDialog(
                     Text(" : ", fontSize = 28.sp)
                     TimeField(minute, { minute = it.filter(Char::isDigit).take(2) }, "Minute")
                 }
+                if (inFuture) {
+                    Text(
+                        "This time is in the future.",
+                        color = MaterialTheme.colorScheme.error,
+                        style = MaterialTheme.typography.bodySmall,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                }
             }
         },
         confirmButton = {
             TextButton(
                 enabled = valid,
-                onClick = {
-                    val out = Calendar.getInstance().apply {
-                        timeInMillis = day
-                        set(Calendar.HOUR_OF_DAY, h!!)
-                        set(Calendar.MINUTE, m!!)
-                        set(Calendar.SECOND, 0)
-                        set(Calendar.MILLISECOND, 0)
-                    }
-                    onSave(out.timeInMillis)
-                },
-            ) { Text("Save") }
+                onClick = { chosen?.let(onSave) },
+            ) { Text(confirmLabel) }
         },
         dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } },
     )

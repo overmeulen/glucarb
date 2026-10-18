@@ -16,6 +16,8 @@ data class QuantitySheetState(
     val editingEntryId: Long? = null,
     /** Meal an add lands in; null means the open meal. */
     val mealId: Long? = null,
+    /** Set instead of [mealId] when the add creates a past meal starting at this time. */
+    val newMealAt: Long? = null,
     val asPortions: Boolean,
     val input: String,
     val chips: List<Double> = emptyList(),
@@ -55,8 +57,11 @@ class QuantitySheetController(
     private val _sheet = MutableStateFlow<QuantitySheetState?>(null)
     val sheet: StateFlow<QuantitySheetState?> = _sheet
 
-    /** Opens the sheet to add [item], into [mealId] or the open meal when null. */
-    fun openFor(item: FoodItem, mealId: Long? = null) {
+    /**
+     * Opens the sheet to add [item], into [mealId], or into a new past meal starting at
+     * [newMealAt], or into the open meal when both are null.
+     */
+    fun openFor(item: FoodItem, mealId: Long? = null, newMealAt: Long? = null) {
         scope.launch {
             val last = mealRepo.lastEntryFor(item.id)
             val asPortions = item.hasPortions && (last?.enteredAsPortions ?: true)
@@ -70,6 +75,7 @@ class QuantitySheetController(
             _sheet.value = QuantitySheetState(
                 item = item,
                 mealId = mealId,
+                newMealAt = newMealAt,
                 asPortions = asPortions,
                 input = CarbMath.format(initial, 2),
                 chips = chipsFor(item, asPortions),
@@ -176,12 +182,15 @@ class QuantitySheetController(
                     approximate = approximate,
                 )
             } else {
-                val id = if (state.mealId == null) {
-                    mealRepo.addCatalogEntry(
+                val id = when {
+                    state.newMealAt != null -> mealRepo.addCatalogEntryToNewMeal(
+                        state.newMealAt, state.item, state.value, state.asPortions,
+                        approximate = approximate,
+                    )
+                    state.mealId == null -> mealRepo.addCatalogEntry(
                         state.item, state.value, state.asPortions, approximate = approximate,
                     )
-                } else {
-                    mealRepo.addCatalogEntryToMeal(
+                    else -> mealRepo.addCatalogEntryToMeal(
                         state.mealId, state.item, state.value, state.asPortions,
                         approximate = approximate,
                     )

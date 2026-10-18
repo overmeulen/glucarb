@@ -21,10 +21,12 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.IosShare
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -55,6 +57,7 @@ import com.glucarb.data.dao.MealWithEntries
 import com.glucarb.data.entity.MealEntry
 import com.glucarb.domain.CarbMath
 import com.glucarb.domain.MealCsvExport
+import com.glucarb.ui.common.MealTimeDialog
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -64,8 +67,10 @@ import java.util.Locale
 fun HistoryScreen(
     onBack: () -> Unit,
     onOpenMeal: (Long) -> Unit,
+    onAddPastMeal: (Long) -> Unit,
     viewModel: HistoryViewModel = hiltViewModel(),
 ) {
+    var pastMealAt by remember { mutableStateOf<Long?>(null) }
     val days by viewModel.days.collectAsStateWithLifecycle()
     val exporting by viewModel.exporting.collectAsStateWithLifecycle()
     val context = LocalContext.current
@@ -88,6 +93,13 @@ fun HistoryScreen(
 
     Scaffold(
         snackbarHost = { SnackbarHost(snackbar) },
+        floatingActionButton = {
+            ExtendedFloatingActionButton(
+                onClick = { pastMealAt = System.currentTimeMillis() },
+                icon = { Icon(Icons.Filled.Add, contentDescription = null) },
+                text = { Text("Past meal") },
+            )
+        },
         topBar = {
             TopAppBar(
                 title = { Text("History") },
@@ -122,8 +134,9 @@ fun HistoryScreen(
         }
 
         LazyColumn(
+            // Bottom room so the last meal can scroll clear of the Past meal button.
             contentPadding = androidx.compose.foundation.layout.PaddingValues(
-                start = 14.dp, end = 14.dp, bottom = 24.dp,
+                start = 14.dp, end = 14.dp, bottom = 96.dp,
             ),
             modifier = Modifier.fillMaxSize().padding(padding),
         ) {
@@ -146,6 +159,21 @@ fun HistoryScreen(
                 }
             }
         }
+    }
+
+    pastMealAt?.let { initial ->
+        MealTimeDialog(
+            initial = initial,
+            showDate = true,
+            title = "Past meal \u2014 when did it start?",
+            confirmLabel = "Next",
+            allowFuture = false,
+            onDismiss = { pastMealAt = null },
+            onSave = { millis ->
+                pastMealAt = null
+                onAddPastMeal(millis)
+            },
+        )
     }
 
     if (exportDialog) {

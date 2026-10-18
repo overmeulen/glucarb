@@ -86,6 +86,24 @@ class MealRepository(
         return insertCatalogEntry(meal, item, input, asPortions, approximate, createdAt)
     }
 
+    /**
+     * A meal the user forgot to log, added from History. It is born closed, so it never
+     * becomes the current meal and the idle timeout has nothing to do with it, even if
+     * [startedAt] falls inside the meal that is open right now. Created together with its
+     * first entry: an empty meal is never stored. Returns the new entry's id.
+     */
+    suspend fun addCatalogEntryToNewMeal(
+        startedAt: Long,
+        item: FoodItem,
+        input: Double,
+        asPortions: Boolean,
+        approximate: Boolean = item.approximateByDefault,
+    ): Long {
+        val meal = Meal(startedAt = startedAt, lastActivityAt = startedAt, closedAt = startedAt)
+        val id = dao.insertMeal(meal)
+        return insertCatalogEntry(meal.copy(id = id), item, input, asPortions, approximate, startedAt)
+    }
+
     private suspend fun insertCatalogEntry(
         meal: Meal,
         item: FoodItem,

@@ -146,10 +146,13 @@ fun HomeScreen(
         }
     }
 
+    val focusManager = androidx.compose.ui.platform.LocalFocusManager.current
     androidx.lifecycle.compose.LifecycleResumeEffect(Unit) {
         viewModel.onResume()
         viewModel.tryResolvePendingAi(readClipboard(context))
-        onPauseOrDispose { }
+        // A search field that keeps focus re-opens the keyboard on every return to the
+        // app, covering the tiles. The query itself is kept.
+        onPauseOrDispose { focusManager.clearFocus() }
     }
 
     LaunchedEffect(Unit) {
@@ -571,6 +574,7 @@ private fun SearchBar(
     onQuery: (String) -> Unit,
     onToggleMode: () -> Unit,
 ) {
+    val focusManager = androidx.compose.ui.platform.LocalFocusManager.current
     Row(
         verticalAlignment = Alignment.CenterVertically,
         // Top padding, not just the divider: the field was sitting against the rule and
@@ -584,6 +588,9 @@ private fun SearchBar(
             placeholder = { Text("Search\u2026") },
             leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
             keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
+            keyboardActions = androidx.compose.foundation.text.KeyboardActions(
+                onSearch = { focusManager.clearFocus() },
+            ),
             shape = RoundedCornerShape(12.dp),
             colors = TextFieldDefaults.colors(
                 focusedIndicatorColor = Color.Transparent,

@@ -25,8 +25,6 @@ import com.glucarb.ui.item.ItemEditScreen
 import com.glucarb.ui.settings.SettingsScreen
 import com.glucarb.ui.theme.GlucarbTheme
 import dagger.hilt.android.AndroidEntryPoint
-import java.net.URLEncoder
-import java.nio.charset.StandardCharsets
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
@@ -60,17 +58,23 @@ class MainActivity : ComponentActivity() {
     }
 }
 
-private object Routes {
+internal object Routes {
     const val HOME = "home"
     const val HISTORY = "history"
-    const val MEAL = "meal/{mealId}"
+    const val MEAL = "meal/{mealId}?at={at}"
     const val SETTINGS = "settings"
     const val ITEM = "item/{itemId}?name={name}"
 
-    fun item(itemId: Long, name: String = ""): String {
-        val encoded = URLEncoder.encode(name, StandardCharsets.UTF_8.name())
-        return "item/$itemId?name=$encoded"
-    }
+    /**
+     * Uri.encode, not URLEncoder: the latter is form encoding and turns spaces into "+",
+     * which navigation does not decode back.
+     */
+    fun item(itemId: Long, name: String = ""): String = "item/$itemId?name=${Uri.encode(name)}"
+
+    fun meal(mealId: Long): String = "meal/$mealId"
+
+    /** A meal that does not exist yet: it is created, at [startedAt], by its first item. */
+    fun newPastMeal(startedAt: Long): String = "meal/0?at=$startedAt"
 }
 
 @Composable
@@ -101,13 +105,17 @@ fun GlucarbNavHost() {
         composable(Routes.HISTORY) {
             HistoryScreen(
                 onBack = { nav.popBackStack() },
-                onOpenMeal = { id -> nav.navigate("meal/$id") },
+                onOpenMeal = { id -> nav.navigate(Routes.meal(id)) },
+                onAddPastMeal = { at -> nav.navigate(Routes.newPastMeal(at)) },
             )
         }
 
         composable(
             route = Routes.MEAL,
-            arguments = listOf(navArgument("mealId") { type = NavType.StringType }),
+            arguments = listOf(
+                navArgument("mealId") { type = NavType.StringType },
+                navArgument("at") { type = NavType.StringType; defaultValue = "0" },
+            ),
         ) {
             MealDetailScreen(onBack = { nav.popBackStack() })
         }

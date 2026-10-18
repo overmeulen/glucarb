@@ -116,4 +116,44 @@ class MealEditingTest {
         assertEquals("0.25", QuantitySheetController.applyKey("0.2", "5", pristine = false))
         assertEquals("1.5", QuantitySheetController.applyKey("1.5", ".", pristine = false))
     }
+
+    @Test
+    fun aPastMealIsCreatedClosedWithItsFirstEntry() = runTest {
+        val item = rice()
+        meals.addCatalogEntry(item, 50.0, false, now = 10_000_000L)
+        val open = requireNotNull(meals.observeCurrentMeal().first())
+
+        // Inside the open meal's time span on purpose: it must still be a meal of its own.
+        val entryId = meals.addCatalogEntryToNewMeal(10_000_500L, item, 200.0, false)
+
+        val entry = requireNotNull(meals.getEntry(entryId))
+        val past = requireNotNull(meals.observeMeal(entry.mealId).first())
+        assertTrue(entry.mealId != open.meal.id)
+        assertFalse(past.meal.isOpen)
+        assertEquals(10_000_500L, past.meal.startedAt)
+        assertEquals(10_000_500L, entry.createdAt)
+        assertEquals(56.0, past.totalCarbs, 0.001)
+        assertEquals(open.meal.id, requireNotNull(meals.observeCurrentMeal().first()).meal.id)
+    }
+
+    @Test
+    fun undoingAPastMealLeavesNoEmptyMeal() = runTest {
+        val item = rice()
+        val entryId = meals.addCatalogEntryToNewMeal(5_000L, item, 100.0, false)
+        val mealId = requireNotNull(meals.getEntry(entryId)).mealId
+
+        meals.deleteEntry(entryId)
+
+        assertNull(meals.observeMeal(mealId).first())
+        assertNull(meals.observeCurrentMeal().first())
+    }
+
+    @Test
+    fun itemNamesSurviveTheRoundTripThroughTheRoute() {
+        val name = "brown rice & lentils 50% ?/+"
+        val route = Routes.item(0L, name)
+        val query = route.substringAfter("?name=")
+        assertFalse(query.contains(' '))
+        assertEquals(name, android.net.Uri.decode(query))
+    }
 }

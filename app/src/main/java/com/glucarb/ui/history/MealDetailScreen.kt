@@ -28,6 +28,10 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarDuration
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
@@ -70,27 +74,48 @@ fun MealDetailScreen(
     val query by viewModel.query.collectAsStateWithLifecycle()
     val pickerItems by viewModel.pickerItems.collectAsStateWithLifecycle()
     var editingTime by remember { mutableStateOf(false) }
+    val snackbar = remember { SnackbarHostState() }
+    val newMealAt = state.newMealAt
 
     // Deleting the last entry deletes the meal; there is nothing left to show.
-    LaunchedEffect(state.loaded, state.meal == null) {
-        if (state.loaded && state.meal == null) onBack()
+    LaunchedEffect(state.loaded, state.meal == null, newMealAt) {
+        if (state.loaded && state.meal == null && newMealAt == null) onBack()
     }
-    BackHandler(enabled = picking && sheet == null) { viewModel.stopPicking() }
+    LaunchedEffect(Unit) {
+        viewModel.events.collect { event ->
+            when (event) {
+                is MealDetailEvent.PastMealAdded -> {
+                    val result = snackbar.showSnackbar(
+                        message = "Past meal added",
+                        actionLabel = "Undo",
+                        duration = SnackbarDuration.Short,
+                    )
+                    if (result == SnackbarResult.ActionPerformed) viewModel.undoPastMeal(event.entryId)
+                }
+            }
+        }
+    }
+    // Backing out of a past meal that has no item yet leaves the screen: there is no
+    // meal behind the picker to go back to.
+    val leavePicker = if (newMealAt != null) onBack else viewModel::stopPicking
+    BackHandler(enabled = picking && sheet == null) { leavePicker() }
 
     val meal = state.meal
     val startedAt = meal?.meal?.startedAt
 
-    if (picking && meal != null) {
+    if (picking && (meal != null || newMealAt != null)) {
         AddItemPicker(
-            subtitle = daySubtitle(meal.meal.startedAt),
+            title = if (newMealAt != null) "New past meal" else "Add to meal",
+            subtitle = daySubtitle(newMealAt ?: meal!!.meal.startedAt),
             query = query,
             onQuery = viewModel::setQuery,
             items = pickerItems,
-            onBack = viewModel::stopPicking,
+            onBack = leavePicker,
             onPick = viewModel::pick,
         )
     } else {
         Scaffold(
+            snackbarHost = { SnackbarHost(snackbar) },
             topBar = {
                 TopAppBar(
                     title = {
@@ -238,6 +263,7 @@ private fun EntryRow(entry: MealEntry, onClick: () -> Unit) {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun AddItemPicker(
+    title: String,
     subtitle: String,
     query: String,
     onQuery: (String) -> Unit,
@@ -250,7 +276,7 @@ private fun AddItemPicker(
             TopAppBar(
                 title = {
                     Column {
-                        Text("Add to meal")
+                        Text(title)
                         Text(
                             subtitle,
                             style = MaterialTheme.typography.bodySmall,

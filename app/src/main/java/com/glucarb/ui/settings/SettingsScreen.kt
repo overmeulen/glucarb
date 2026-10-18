@@ -166,10 +166,12 @@ fun SettingsScreen(
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                 modifier = Modifier.fillMaxWidth(),
             )
-            TextButton(
-                onClick = { idle.toIntOrNull()?.let(viewModel::setIdleTimeout) },
-                enabled = idle.toIntOrNull()?.let { it != settings.idleTimeoutMinutes } == true,
-            ) { Text("Save timeout") }
+            Row(horizontalArrangement = Arrangement.End, modifier = Modifier.fillMaxWidth()) {
+                TextButton(
+                    onClick = { idle.toIntOrNull()?.let(viewModel::setIdleTimeout) },
+                    enabled = idle.toIntOrNull()?.let { it != settings.idleTimeoutMinutes } == true,
+                ) { Text("Save timeout") }
+            }
 
             SectionTitle("Backup")
             Text(
